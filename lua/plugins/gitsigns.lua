@@ -4,11 +4,14 @@ return {
   },
   {
     "lewis6991/gitsigns.nvim",
+    event = { "BufRead", "BufNewFile" },
     config = function()
-      require("gitsigns").setup()
+      require("gitsigns").setup({
+        -- current_line_blame = true,
+      })
 
-      vim.keymap.set("n", "<Leader>gp", ":Gitsigns preview_hunk<CR>", {})
-      vim.keymap.set("n", "<Leader>gt", ":Gitsigns toggle_current_line_blame<CR>", {})
+      vim.keymap.set("n", "<Leader>gp", ":Gitsigns preview_hunk<CR>", { silent = true })
+      vim.keymap.set("n", "<Leader>gt", ":Gitsigns toggle_current_line_blame<CR>", { silent = true })
     end,
   },
 }

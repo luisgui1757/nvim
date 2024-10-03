@@ -1,4 +1,5 @@
 return {
+  -- Setup for nvim-dap
   {
     "mfussenegger/nvim-dap",
     dependencies = {
@@ -9,14 +10,17 @@ return {
       local dap = require("dap")
       local dapui = require("dapui")
 
-      require("dapui").setup()
+      -- Setup dap-ui
+      dapui.setup()
 
+      -- Configure GDB as the DAP adapter for C++
       dap.adapters.gdb = {
         type = "executable",
         command = "gdb",
         args = { "-i", "dap" },
       }
 
+      -- DAP configuration for C++
       dap.configurations.cpp = {
         {
           name = "Launch",
@@ -30,6 +34,7 @@ return {
         },
       }
 
+      -- Setup event listeners for dap-ui
       dap.listeners.before.attach.dapui_config = function()
         dapui.open()
       end
@@ -43,6 +48,7 @@ return {
         dapui.close()
       end
 
+      -- Keybindings for DAP
       vim.keymap.set("n", "<Leader>dt", dap.toggle_breakpoint, {})
       vim.keymap.set("n", "<F5>", function()
         require("dap").continue()
@@ -58,15 +64,20 @@ return {
       end)
     end,
   },
+
+  -- Setup for Python DAP using mason and dap-python
   {
     "mfussenegger/nvim-dap-python",
     dependencies = {
-      "mfussenegger/nvim-dap-python",
       "rcarriga/nvim-dap-ui",
+      "williamboman/mason.nvim",  -- Add mason.nvim as a dependency
     },
     config = function()
       local dap_python = require("dap-python")
       local mason_registry = require("mason-registry")
+
+      -- Ensure Mason is set up
+      require("mason").setup()
 
       -- Ensure the package 'debugpy' is installed
       if mason_registry.is_installed("debugpy") then
@@ -78,6 +89,14 @@ return {
       else
         print("debugpy is not installed. Please install via :Mason")
       end
+    end,
+  },
+
+  -- Setup for Mason itself
+  {
+    "williamboman/mason.nvim",
+    config = function()
+      require("mason").setup()
     end,
   },
 }
