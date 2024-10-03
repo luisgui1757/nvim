@@ -1,9 +1,9 @@
 return {
-  "jiaoshijie/undotree",
-  dependencies = "nvim-lua/plenary.nvim",
-  config = function()
-    require("undotree").setup({
-      vim.keymap.set("n", "<leader>u", require("undotree").toggle, { noremap = true, silent = true }),
-    })
-  end,
+  {
+    "mbbill/undotree",
+    cmd = "UndotreeToggle",
+    config = function()
+      vim.keymap.set("n", "<leader>u", ":UndotreeToggle<CR>", { noremap = true, silent = true })
+    end,
+  },
 }

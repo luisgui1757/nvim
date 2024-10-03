@@ -1,42 +1,29 @@
-local notes_path = ""
-local sysname = vim.loop.os_uname().sysname
+local notes_path = vim.fn.expand("~")
 
-if sysname == "Darwin" then
-  notes_path = "~/Library/Mobile Documents/iCloud~md~obsidian/Documents/luisribeiro"
+if vim.loop.os_uname().sysname == "Darwin" then
+  notes_path = notes_path .. "/Library/Mobile Documents/iCloud~md~obsidian/Documents/luisribeiro"
 else
-  notes_path = "~/Documents/Notes/luisribeiro"
+  notes_path = notes_path .. "/Documents/Notes/luisribeiro"
 end
 
 return {
   {
     "iamcco/markdown-preview.nvim",
-    cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
     ft = { "markdown" },
-    build = function()
-      vim.fn["mkdp#util#install"]()
+    build = "cd app && npm install",
+    config = function()
+      vim.keymap.set("n", "<C-s>", "<Plug>MarkdownPreviewToggle", { noremap = true, silent = true })
     end,
-
-    vim.api.nvim_set_keymap("n", "<C-s>", "<Plug>MarkdownPreviewToggle", { noremap = true, silent = true })
   },
   {
     "epwalsh/obsidian.nvim",
-    version = "*",
-    lazy = true,
-    ft = "markdown",
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-    },
+    ft = { "markdown" },
+    dependencies = { "nvim-lua/plenary.nvim" },
     config = function()
       vim.opt.conceallevel = 2
       require("obsidian").setup({
-
-        workspaces = {
-          {
-            name = "personal",
-            path = notes_path,
-          },
-        },
+        dir = notes_path,
       })
     end,
-  }
+  },
 }

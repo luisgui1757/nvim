@@ -1,5 +1,6 @@
 return {
   "nvimtools/none-ls.nvim",
+  event = { "BufReadPre", "BufNewFile" },
   config = function()
     -- Prevent all autoformatters from running on save
     local augroup = vim.api.nvim_create_augroup("NullLsFormatting", {})
@@ -21,7 +22,12 @@ return {
     null_ls.setup({
       sources = {
         null_ls.builtins.formatting.cmake_format,
-        null_ls.builtins.formatting.prettier
+        null_ls.builtins.formatting.gersemi.with({
+          extra_args = {
+            "--line-length", "120",
+            "--indent", "2",
+          },
+        }),
       },
       on_attach = on_attach,
     })

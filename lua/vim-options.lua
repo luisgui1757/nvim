@@ -1,72 +1,45 @@
-vim.cmd("set expandtab")
-vim.cmd("set tabstop=2")
-vim.cmd("set softtabstop=2")
-vim.cmd("set shiftwidth=2")
-vim.cmd("set mouse=")
-vim.cmd("set relativenumber")
+-- Indentation settings
+vim.opt.expandtab = true
+vim.opt.tabstop = 2
+vim.opt.shiftwidth = 2
+vim.opt.softtabstop = 2
+
+-- Line numbers
+vim.opt.number = true
+vim.opt.relativenumber = true
+
+-- Disable mouse support
+vim.opt.mouse = ""
+
 -- Show whitespace characters
-vim.cmd("set listchars=space:·,trail:·")
-vim.cmd("set list")
+vim.opt.list = true
+vim.opt.listchars = { space = "·", trail = "·" }
 
--- Enable Relative Lines
-vim.wo.relativenumber = true
--- Show current line as absolute
-vim.wo.number = true
-
-
--- Disable arrow keys in normal mode
-vim.api.nvim_set_keymap("n", "<Up>", "<Nop>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<Down>", "<Nop>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<Left>", "<Nop>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<Right>", "<Nop>", { noremap = true, silent = true })
-
--- Disable arrow keys in insert mode
-vim.api.nvim_set_keymap("i", "<Up>", "<Nop>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("i", "<Down>", "<Nop>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("i", "<Left>", "<Nop>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("i", "<Right>", "<Nop>", { noremap = true, silent = true })
-
-vim.api.nvim_set_option("clipboard", "unnamed")
-
-vim.g.mapleader = " "
-
--- Define a Lua function to toggle between relative and absolute line numbers
-function toggle_line_numbers()
-  -- Check if relative line numbers are currently enabled
-  if vim.wo.relativenumber then
-    -- Turn off relative numbers, turn on absolute numbers
-    vim.wo.relativenumber = false
-    vim.wo.number = true
-  else
-    -- Turn on relative numbers, absolute numbers will also be on
-    vim.wo.relativenumber = true
-    vim.wo.number = true
+-- Disable arrow keys
+for _, mode in ipairs({ "n", "i" }) do
+  for _, key in ipairs({ "<Up>", "<Down>", "<Left>", "<Right>" }) do
+    vim.keymap.set(mode, key, "<Nop>", { noremap = true, silent = true })
   end
 end
 
--- Define a Lua function to clear the background
-local function clear_background()
-  vim.api.nvim_command("highlight Normal ctermbg=NONE guibg=NONE")
-end
+-- Clipboard
+vim.opt.clipboard = "unnamed"
 
--- Lua function to clear the search highlight
-function clear_search_highlight()
-  vim.api.nvim_exec("nohlsearch", false)
-end
+-- Leader key
+vim.g.mapleader = " "
 
--- Create an autocmd group and set up the autocmd
-vim.api.nvim_create_augroup("user_colors", { clear = true })
+-- Toggle relative line numbers
+vim.keymap.set("n", "<leader>lt", function()
+  vim.wo.relativenumber = not vim.wo.relativenumber
+end, { noremap = true, silent = true })
+
+-- Clear search highlight
+vim.keymap.set("n", "<leader>ch", ":nohlsearch<CR>", { noremap = true, silent = true })
+
+-- Clear background on colorscheme change
 vim.api.nvim_create_autocmd("ColorScheme", {
-  group = "user_colors",
   pattern = "*",
-  callback = clear_background,
+  callback = function()
+    vim.cmd("highlight Normal ctermbg=NONE guibg=NONE")
+  end,
 })
-
--- Creating a command that references the local function
-vim.cmd([[command! ToggleLineNumbers lua toggle_line_numbers()]])
-vim.api.nvim_set_keymap('n', '<leader>lt', '<cmd>ToggleLineNumbers<CR>', { noremap = true, silent = true })
-
--- Mapping the key combination to the Lua function
-vim.api.nvim_set_keymap('n', '<leader>ch', '<cmd>lua clear_search_highlight()<CR>', { noremap = true, silent = true })
-
-
