@@ -16,7 +16,6 @@ return {
   },
 
   -- nvim-cmp for auto-completion
-  -- nvim-cmp for auto-completion
   {
     "hrsh7th/nvim-cmp",
     event = "InsertEnter",
@@ -47,12 +46,12 @@ return {
   },
 
   -- nvim-autopairs for automatic pairing of brackets, quotes, etc.
-  {
-    "windwp/nvim-autopairs",
-    config = function()
-      require("nvim-autopairs").setup()
-    end,
-  },
+  -- {
+  --   "windwp/nvim-autopairs",
+  --   config = function()
+  --     require("nvim-autopairs").setup()
+  --   end,
+  -- },
 
   -- vim-surround for easy manipulation of surrounding characters
   -- {
