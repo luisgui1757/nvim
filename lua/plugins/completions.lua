@@ -36,25 +36,10 @@ return {
         }),
         sources = cmp.config.sources({
           { name = "nvim_lsp" },
-          { name = "copilot" }, -- Added Copilot source
           { name = "luasnip" },
-        }, {
           { name = "buffer" },
         }),
       })
     end,
   },
-
-  -- nvim-autopairs for automatic pairing of brackets, quotes, etc.
-  -- {
-  --   "windwp/nvim-autopairs",
-  --   config = function()
-  --     require("nvim-autopairs").setup()
-  --   end,
-  -- },
-
-  -- vim-surround for easy manipulation of surrounding characters
-  -- {
-  --   "tpope/vim-surround",
-  -- },
 }

@@ -9,6 +9,7 @@ return {
         highlight = { enable = true },
         indent = { enable = true },
       })
+      vim.api.nvim_del_user_command("EditQuery")
     end,
   },
 }
