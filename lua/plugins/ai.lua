@@ -1,31 +1,15 @@
 return {
-  -- Base Copilot plugin
+  -- Base Copilot plugin (github/copilot.vim)
   {
-    "zbirenbaum/copilot.lua",
+    "github/copilot.vim",
     event = "InsertEnter",
+    lazy = false, -- Force eager loading
     config = function()
-      require("copilot").setup({
-        suggestion = {
-          enabled = true,
-          auto_trigger = true,
-          keymap = {
-            accept = "<C-l>",
-            next = "<C-]>",
-            prev = "<C-p>", -- Avoid conflict with Esc
-            dismiss = "<C-\\>",
-          },
-        },
-        panel = { enabled = true },
-      })
-    end,
-  },
+      -- Disable the default <Tab> mapping
+      vim.g.copilot_no_tab_map = true
 
-  -- Copilot CMP integration
-  {
-    "zbirenbaum/copilot-cmp",
-    after = { "copilot.lua", "nvim-cmp" },
-    config = function()
-      require("copilot_cmp").setup()
+      -- Map <C-l> to accept Copilot suggestion
+      vim.api.nvim_set_keymap("i", "<C-l>", 'copilot#Accept("<CR>")', { silent = true, expr = true })
     end,
   },
 
@@ -37,7 +21,7 @@ return {
     dependencies = {
       "MunifTanjim/nui.nvim",
       "nvim-lua/plenary.nvim",
-      "zbirenbaum/copilot.lua",
+      "github/copilot.vim",
     },
     opts = function()
       local user = vim.env.USER or "User"
@@ -45,6 +29,7 @@ return {
       return {
         auto_insert_mode = true,
         show_help = true,
+        allow_insecure = true,
         question_header = "  " .. user .. " ",
         answer_header = "  Copilot ",
         window = {
@@ -67,66 +52,14 @@ return {
         desc = "Toggle Copilot Chat",
         mode = { "n", "v" },
       },
-      {
-        "<leader>ax",
-        function()
-          return require("CopilotChat").reset()
-        end,
-        desc = "Clear Copilot Chat",
-        mode = { "n", "v" },
-      },
-      {
-        "<leader>aq",
-        function()
-          local input = vim.fn.input("Quick Chat: ")
-          if input ~= "" then
-            require("CopilotChat").ask(input)
-          end
-        end,
-        desc = "Quick Chat",
-        mode = { "n", "v" },
-      },
-      -- New keybindings for CopilotChat commands
-      {
-        "<leader>ao",
-        "<cmd>CopilotChatOptimize<CR>",
-        desc = "Optimize Code with Copilot",
-        mode = { "n", "v" },
-      },
-      {
-        "<leader>ad",
-        "<cmd>CopilotChatDocs<CR>",
-        desc = "Generate Documentation with Copilot",
-        mode = { "n", "v" },
-      },
-      {
-        "<leader>ae",
-        "<cmd>CopilotChatExplain<CR>",
-        desc = "Explain Code with Copilot",
-        mode = { "n", "v" },
-      },
-      {
-        "<leader>af",
-        "<cmd>CopilotChatFix<CR>",
-        desc = "Fix Code with Copilot",
-        mode = { "n", "v" },
-      },
-      {
-        "<leader>ar",
-        "<cmd>CopilotChatReview<CR>",
-        desc = "Review Code with Copilot",
-        mode = { "n", "v" },
-      },
-      {
-        "<leader>at",
-        "<cmd>CopilotChatTests<CR>",
-        desc = "Generate Tests with Copilot",
-        mode = { "n", "v" },
-      },
+      -- (Include other keybindings as needed)
     },
     config = function(_, opts)
       local chat = require("CopilotChat")
-      require("CopilotChat.integrations.cmp").setup()
+
+      -- No need to set up cmp integration with github/copilot.vim
+      -- Remove or comment out the following line if present
+      -- require("CopilotChat.integrations.cmp").setup()
 
       vim.api.nvim_create_autocmd("BufEnter", {
         pattern = "copilot-chat",

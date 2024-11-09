@@ -13,5 +13,7 @@ vim.opt.rtp:prepend(lazypath)
 
 local opts = {}
 
+vim.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+
 require("vim-options")
 require("lazy").setup("plugins")
