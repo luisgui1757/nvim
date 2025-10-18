@@ -1,0 +1,49 @@
+return {
+	-- {
+	-- 	"github/copilot.vim",
+	-- 	event = "InsertEnter",
+	-- 	config = function()
+	-- 		vim.g.copilot_no_tab_map = true
+	-- 		vim.api.nvim_set_keymap("i", "<C-l>", 'copilot#Accept("<CR>")', { silent = true, expr = true })
+	-- 	end,
+	-- },
+	-- {
+	-- 	"CopilotC-Nvim/CopilotChat.nvim",
+	-- 	branch = "main",
+	-- 	cmd = "CopilotChat",
+	-- 	dependencies = {
+	-- 		"MunifTanjim/nui.nvim",
+	-- 		"nvim-lua/plenary.nvim",
+	-- 		"github/copilot.vim",
+	-- 	},
+	-- 	opts = {
+	-- 		auto_insert_mode = true,
+	-- 		show_help = false,
+	-- 		allow_insecure = true,
+	-- 		question_header = "  You ",
+	-- 		answer_header = "  Copilot ",
+	-- 		window = { width = 0.4 },
+	-- 		selection = function(source)
+	-- 			local select = require("CopilotChat.select")
+	-- 			return select.visual(source) or select.buffer(source)
+	-- 		end,
+	-- 	},
+	-- 	keys = {
+	-- 		{
+	-- 			"<c-s>",
+	-- 			"<CR>",
+	-- 			ft = "copilot-chat",
+	-- 			desc = "Submit",
+	-- 			remap = true,
+	-- 		},
+	-- 		{
+	-- 			"<leader>aa",
+	-- 			function()
+	-- 				require("CopilotChat").toggle()
+	-- 			end,
+	-- 			desc = "Toggle Chat",
+	-- 			mode = { "n", "v" },
+	-- 		},
+	-- 	},
+	-- },
+}
