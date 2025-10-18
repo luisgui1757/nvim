@@ -16,10 +16,8 @@ vim.opt.list = true
 vim.opt.listchars = { space = "·", trail = "·" }
 
 -- Disable arrow keys
-for _, mode in ipairs({ "n", "i" }) do
-  for _, key in ipairs({ "<Up>", "<Down>", "<Left>", "<Right>" }) do
-    vim.keymap.set(mode, key, "<Nop>", { noremap = true, silent = true })
-  end
+for _, mode in ipairs({ "n", "i" }) do  for _, key in ipairs({ "<Up>", "<Down>", "<Left>", "<Right>" }) do
+  vim.keymap.set(mode, key, "<Nop>", { noremap = true, silent = true })  end
 end
 
 -- Clipboard
@@ -29,17 +27,22 @@ vim.opt.clipboard = "unnamed"
 vim.g.mapleader = " "
 
 -- Toggle relative line numbers
-vim.keymap.set("n", "<leader>lt", function()
-  vim.wo.relativenumber = not vim.wo.relativenumber
+vim.keymap.set("n", "<leader>lt", function()  vim.wo.relativenumber = not vim.wo.relativenumber
 end, { noremap = true, silent = true })
 
 -- Clear search highlight
 vim.keymap.set("n", "<leader>ch", ":nohlsearch<CR>", { noremap = true, silent = true })
 
+-- Toggle quickfix window
+vim.keymap.set("n", "<leader>qq", ":cclose<CR>", { noremap = true, silent = true })
+
 -- Clear background on colorscheme change
-vim.api.nvim_create_autocmd("ColorScheme", {
-  pattern = "*",
-  callback = function()
-    vim.cmd("highlight Normal ctermbg=NONE guibg=NONE")
-  end,
+vim.api.nvim_create_autocmd("ColorScheme", {  pattern = "*",  callback = function()
+  vim.cmd("highlight Normal ctermbg=NONE guibg=NONE")  end,
 })
+
+-- Alt-based window navigation
+vim.keymap.set("n", "<A-h>", "<C-w>h", { noremap = true, silent = true })
+vim.keymap.set("n", "<A-j>", "<C-w>j", { noremap = true, silent = true })
+vim.keymap.set("n", "<A-k>", "<C-w>k", { noremap = true, silent = true })
+vim.keymap.set("n", "<A-l>", "<C-w>l", { noremap = true, silent = true })
