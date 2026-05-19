@@ -90,6 +90,22 @@ else
     echo "ok  : all .ps1 files are pure ASCII (PS 5.1 safe)"
 fi
 
+# PS 5.1 has been observed mis-parsing comments that contain a lone
+# apostrophe (e.g. "5.1's") — it sometimes treats the apostrophe as
+# the start of a string literal that runs past the comment terminator,
+# producing "Missing closing ')' in expression" errors that point at
+# the wrong line. Easier to ban stray apostrophes in .ps1 comments than
+# to debug the next occurrence.
+ps1_comment_apos=$(grep -nE "^\s*#.*'" bootstrap.ps1 shells/powershell_profile.ps1 \
+    tests/bootstrap/*.ps1 tests/powershell/*.ps1 2>/dev/null || true)
+if [[ -n "$ps1_comment_apos" ]]; then
+    echo "FAIL: apostrophe in a .ps1 comment (PS 5.1 may mis-tokenize):"
+    echo "$ps1_comment_apos" | sed 's/^/  /'
+    fail=1
+else
+    echo "ok  : no apostrophes in .ps1 comments"
+fi
+
 # Dead-code guards
 for dead in nvim/lua/plugins.lua nvim/lua/plugins/ai.lua nvim/lua/plugins/avante.lua nvim/lua/plugins/none-ls.lua; do
     if [[ -e "$dead" ]]; then

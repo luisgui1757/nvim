@@ -166,9 +166,10 @@ if ($MergeWindowsTerminal) {
                 $current | Add-Member -NotePropertyName profiles -NotePropertyValue ([pscustomobject]@{}) -Force
             }
 
-            # Keep this on one line -- Windows PowerShell 5.1's parser has a
-            # quirk where newline-separated string literals inside @(...) for
-            # an assignment expression fail with "missing terminator: '".
+            # Keep the next line as ONE line. Windows PowerShell 5.1
+            # rejects newline-separated string literals inside an array
+            # literal in an assignment context. Single-line @(...) is
+            # the only form that parses across 5.1 and 7.
             $topLevelKeys = @('copyFormatting','copyOnSelect','firstWindowPreference','initialRows','useAcrylicInTabRow','windowingBehavior','theme')
             foreach ($key in $topLevelKeys) {
                 if ($null -ne $fragment.$key) {

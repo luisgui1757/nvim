@@ -12,7 +12,7 @@ Describe "PowerShell profile" {
     }
 
     It "dot-sources cleanly even when starship is not on PATH" {
-        # Use a sandbox PATH that doesn't contain starship.
+        # Use a sandbox PATH that does not contain starship.
         $sandbox = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-sandbox-" + [System.Guid]::NewGuid())
         New-Item -ItemType Directory -Force -Path $sandbox | Out-Null
         $oldPath = $env:PATH
