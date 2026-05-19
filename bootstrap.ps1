@@ -1,6 +1,6 @@
-# bootstrap.ps1 — symlink dotfiles into Windows-appropriate paths.
+# bootstrap.ps1 -- symlink dotfiles into Windows-appropriate paths.
 # Requires either an elevated PowerShell session OR Developer Mode enabled
-# (Settings → Privacy & security → For developers → Developer Mode = On).
+# (Settings -> Privacy & security -> For developers -> Developer Mode = On).
 #
 # Usage:
 #   .\bootstrap.ps1
@@ -49,23 +49,23 @@ function New-SymLink {
             $existing = $item.Target
             if ($existing -is [array]) { $existing = $existing[0] }
             if ($existing -eq $Source) {
-                Write-Step "ok       $Destination → $Source"
+                Write-Step "ok       $Destination -> $Source"
                 return
             }
             if ($DryRun) {
-                Write-Step "relink   $Destination (was → $existing)"
+                Write-Step "relink   $Destination (was -> $existing)"
                 return
             }
             Remove-Item -LiteralPath $Destination -Force
             New-Item -ItemType SymbolicLink -Path $Destination -Target $Source | Out-Null
-            Write-Step "relinked $Destination → $Source"
+            Write-Step "relinked $Destination -> $Source"
             return
         }
 
-        # Real file/dir at the destination — back it up.
+        # Real file/dir at the destination -- back it up.
         $backup = Get-UniqueBackupPath "$Destination.bak.$Timestamp"
         if ($DryRun) {
-            Write-Step "backup   $Destination → $backup; then symlink"
+            Write-Step "backup   $Destination -> $backup; then symlink"
             return
         }
         try {
@@ -87,16 +87,16 @@ function New-SymLink {
             throw
         }
         New-Item -ItemType SymbolicLink -Path $Destination -Target $Source | Out-Null
-        Write-Step "backed up $Destination → $backup; linked → $Source"
+        Write-Step "backed up $Destination -> $backup; linked -> $Source"
         return
     }
 
     if ($DryRun) {
-        Write-Step "link     $Destination → $Source"
+        Write-Step "link     $Destination -> $Source"
         return
     }
     New-Item -ItemType SymbolicLink -Path $Destination -Target $Source | Out-Null
-    Write-Step "linked   $Destination → $Source"
+    Write-Step "linked   $Destination -> $Source"
 }
 
 function Test-CanCreateSymlinks {
@@ -125,7 +125,7 @@ if (-not (Test-CanCreateSymlinks)) {
         Write-Error @"
 Cannot create symbolic links. Either:
   - Run this from an elevated PowerShell, OR
-  - Enable Developer Mode: Settings → Privacy & security → For developers → Developer Mode = On
+  - Enable Developer Mode: Settings -> Privacy & security -> For developers -> Developer Mode = On
 "@
         exit 1
     }
@@ -137,7 +137,7 @@ New-SymLink -Source (Join-Path $RepoRoot 'nvim')                       -Destinat
 New-SymLink -Source (Join-Path $RepoRoot 'starship\starship.toml')     -Destination (Join-Path $env:USERPROFILE '.config\starship.toml')
 New-SymLink -Source (Join-Path $RepoRoot 'shells\powershell_profile.ps1') -Destination $PROFILE
 
-# Optional: WSL Ubuntu access — symlinks inside WSL handled by bootstrap.sh.
+# Optional: WSL Ubuntu access -- symlinks inside WSL handled by bootstrap.sh.
 
 # ---- Optional WT fragment merge ----------------------------------------------
 if ($MergeWindowsTerminal) {
@@ -155,7 +155,7 @@ if ($MergeWindowsTerminal) {
 
         $backup = "$wtSettings.bak.$Timestamp"
         if ($DryRun) {
-            Write-Step "merge    $wtSettings (backup → $backup)"
+            Write-Step "merge    $wtSettings (backup -> $backup)"
         } else {
             Copy-Item -LiteralPath $wtSettings -Destination $backup -Force
             $current = Get-Content -Raw -LiteralPath $wtSettings | ConvertFrom-Json
@@ -166,7 +166,7 @@ if ($MergeWindowsTerminal) {
                 $current | Add-Member -NotePropertyName profiles -NotePropertyValue ([pscustomobject]@{}) -Force
             }
 
-            # Keep this on one line — Windows PowerShell 5.1's parser has a
+            # Keep this on one line -- Windows PowerShell 5.1's parser has a
             # quirk where newline-separated string literals inside @(...) for
             # an assignment expression fail with "missing terminator: '".
             $topLevelKeys = @('copyFormatting','copyOnSelect','firstWindowPreference','initialRows','useAcrylicInTabRow','windowingBehavior','theme')
@@ -191,11 +191,11 @@ if ($MergeWindowsTerminal) {
             $tmp = "$wtSettings.tmp"
             $current | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $tmp -Encoding UTF8
             Move-Item -Force -LiteralPath $tmp -Destination $wtSettings
-            Write-Step "merged   $wtSettings (backup → $backup)"
+            Write-Step "merged   $wtSettings (backup -> $backup)"
         }
     }
 }
 
 Write-Host
 Write-Host "bootstrap.ps1: done"
-if ($DryRun) { Write-Host "(dry run — no changes were made)" }
+if ($DryRun) { Write-Host "(dry run -- no changes were made)" }

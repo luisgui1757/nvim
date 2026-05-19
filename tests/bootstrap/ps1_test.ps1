@@ -70,7 +70,7 @@ Describe "bootstrap.ps1 -MergeWindowsTerminal" {
     }
 
     It "preserves the user's discovered profile list" {
-        # Seed a minimal but realistic settings.json — what WT auto-generates.
+        # Seed a minimal but realistic settings.json -- what WT auto-generates.
         @"
 {
     "profiles": {

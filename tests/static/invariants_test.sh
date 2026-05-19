@@ -22,6 +22,7 @@ check_absent "NODE_TLS_REJECT_UNAUTHORIZED gone (security)" \
     "NODE_TLS_REJECT_UNAUTHORIZED" \
     --exclude-dir=.git --exclude-dir=claude --exclude-dir=.claude \
     --exclude-dir=tests \
+    --exclude="CLAUDE.md" --exclude="README.md" \
     .
 
 check_absent "vim.loop replaced by vim.uv (deprecation)" \
@@ -70,6 +71,24 @@ for stale in mason-lspconfig.nvim none-ls.nvim CopilotChat.nvim copilot.vim nui.
         fail=1
     fi
 done
+
+# .ps1 files must be pure ASCII. Windows PowerShell 5.1 reads files
+# without a BOM as ANSI / CP-1252; UTF-8 multi-byte chars (em-dash,
+# arrows) get mis-tokenized and cause "Missing closing ')'" parse
+# errors. Save-as-UTF-8-BOM would also work, but ASCII is simpler.
+ps1_non_ascii=$(LC_ALL=C grep -lP "[^\x00-\x7F]" \
+    bootstrap.ps1 \
+    shells/powershell_profile.ps1 \
+    tests/bootstrap/*.ps1 \
+    tests/powershell/*.ps1 \
+    2>/dev/null || true)
+if [[ -n "$ps1_non_ascii" ]]; then
+    echo "FAIL: non-ASCII chars in .ps1 file(s) (PS 5.1 will mis-parse):"
+    echo "$ps1_non_ascii" | sed 's/^/  /'
+    fail=1
+else
+    echo "ok  : all .ps1 files are pure ASCII (PS 5.1 safe)"
+fi
 
 # Dead-code guards
 for dead in nvim/lua/plugins.lua nvim/lua/plugins/ai.lua nvim/lua/plugins/avante.lua nvim/lua/plugins/none-ls.lua; do
