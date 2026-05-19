@@ -69,6 +69,11 @@ that violates one of these, fix it instead of disabling the test.
 10. **The four deleted dead files must stay deleted:**
     `nvim/lua/plugins.lua`, `nvim/lua/plugins/ai.lua`,
     `nvim/lua/plugins/avante.lua`, `nvim/lua/plugins/none-ls.lua`.
+11. **Markdown rendering lives in `nvim/lua/plugins/markdown.lua`
+    (render-markdown.nvim).** Don't add `headlines.nvim` or
+    `markview.nvim` alongside it — they overlap and fight for the same
+    extmarks. Obsidian.nvim's own UI is disabled (`ui.enable = false`)
+    in `notes.lua` so render-markdown owns rendering everywhere.
 
 ## Common workflows
 
