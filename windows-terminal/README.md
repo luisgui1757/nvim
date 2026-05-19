@@ -38,10 +38,19 @@ $fragment = Get-Content -Raw -Path windows-terminal\settings.fragment.jsonc |
 
 $current = Get-Content -Raw -Path $wtSettings | ConvertFrom-Json
 
-# Top-level scalars
-'copyFormatting','copyOnSelect','firstWindowPreference','initialRows',
-'useAcrylicInTabRow','windowingBehavior' | ForEach-Object {
-    if ($null -ne $fragment.$_) { $current.$_ = $fragment.$_ }
+# Top-level scalars (use @(...) — comma-as-line-continuation across
+# array literals doesn't parse in Windows PowerShell 5.1)
+$topLevelKeys = @(
+    'copyFormatting'
+    'copyOnSelect'
+    'firstWindowPreference'
+    'initialRows'
+    'theme'
+    'useAcrylicInTabRow'
+    'windowingBehavior'
+)
+foreach ($key in $topLevelKeys) {
+    if ($null -ne $fragment.$key) { $current.$key = $fragment.$key }
 }
 
 # Defaults, actions, schemes, themes (replace these sections wholesale)

@@ -166,13 +166,21 @@ if ($MergeWindowsTerminal) {
                 $current | Add-Member -NotePropertyName profiles -NotePropertyValue ([pscustomobject]@{}) -Force
             }
 
-            'copyFormatting','copyOnSelect','firstWindowPreference','initialRows',
-            'useAcrylicInTabRow','windowingBehavior','theme' | ForEach-Object {
-                if ($null -ne $fragment.$_) {
-                    if ($null -eq $current.$_) {
-                        $current | Add-Member -NotePropertyName $_ -NotePropertyValue $fragment.$_ -Force
+            $topLevelKeys = @(
+                'copyFormatting'
+                'copyOnSelect'
+                'firstWindowPreference'
+                'initialRows'
+                'useAcrylicInTabRow'
+                'windowingBehavior'
+                'theme'
+            )
+            foreach ($key in $topLevelKeys) {
+                if ($null -ne $fragment.$key) {
+                    if ($null -eq $current.$key) {
+                        $current | Add-Member -NotePropertyName $key -NotePropertyValue $fragment.$key -Force
                     } else {
-                        $current.$_ = $fragment.$_
+                        $current.$key = $fragment.$key
                     }
                 }
             }
