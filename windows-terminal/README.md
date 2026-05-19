@@ -38,17 +38,10 @@ $fragment = Get-Content -Raw -Path windows-terminal\settings.fragment.jsonc |
 
 $current = Get-Content -Raw -Path $wtSettings | ConvertFrom-Json
 
-# Top-level scalars (use @(...) — comma-as-line-continuation across
-# array literals doesn't parse in Windows PowerShell 5.1)
-$topLevelKeys = @(
-    'copyFormatting'
-    'copyOnSelect'
-    'firstWindowPreference'
-    'initialRows'
-    'theme'
-    'useAcrylicInTabRow'
-    'windowingBehavior'
-)
+# Top-level scalars. Keep the array on one line — PS 5.1 rejects both
+# comma-continuation AND newline-separated string literals inside @() in
+# an assignment expression. The one-line form parses cleanly in 5.1 + 7.
+$topLevelKeys = @('copyFormatting','copyOnSelect','firstWindowPreference','initialRows','theme','useAcrylicInTabRow','windowingBehavior')
 foreach ($key in $topLevelKeys) {
     if ($null -ne $fragment.$key) { $current.$key = $fragment.$key }
 }

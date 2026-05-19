@@ -166,15 +166,10 @@ if ($MergeWindowsTerminal) {
                 $current | Add-Member -NotePropertyName profiles -NotePropertyValue ([pscustomobject]@{}) -Force
             }
 
-            $topLevelKeys = @(
-                'copyFormatting'
-                'copyOnSelect'
-                'firstWindowPreference'
-                'initialRows'
-                'useAcrylicInTabRow'
-                'windowingBehavior'
-                'theme'
-            )
+            # Keep this on one line — Windows PowerShell 5.1's parser has a
+            # quirk where newline-separated string literals inside @(...) for
+            # an assignment expression fail with "missing terminator: '".
+            $topLevelKeys = @('copyFormatting','copyOnSelect','firstWindowPreference','initialRows','useAcrylicInTabRow','windowingBehavior','theme')
             foreach ($key in $topLevelKeys) {
                 if ($null -ne $fragment.$key) {
                     if ($null -eq $current.$key) {
