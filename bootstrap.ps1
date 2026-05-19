@@ -68,7 +68,24 @@ function New-SymLink {
             Write-Step "backup   $Destination → $backup; then symlink"
             return
         }
-        Move-Item -LiteralPath $Destination -Destination $backup -Force
+        try {
+            Move-Item -LiteralPath $Destination -Destination $backup -Force -ErrorAction Stop
+        } catch {
+            Write-Host ""
+            Write-Host "  FAIL     could not back up: $Destination" -ForegroundColor Red
+            Write-Host "           reason: $($_.Exception.Message)" -ForegroundColor Red
+            if ($_.Exception.Message -match 'being used by another process') {
+                Write-Host "           This usually means a running program has files open inside" -ForegroundColor Yellow
+                Write-Host "           the target. Most common culprits, in order:" -ForegroundColor Yellow
+                Write-Host "             1. A running Neovim / Neovide / nvim-qt:" -ForegroundColor Yellow
+                Write-Host "                Get-Process -Name nvim*, neovide -EA SilentlyContinue | Stop-Process -Force" -ForegroundColor Yellow
+                Write-Host "             2. Another PowerShell window that loaded the old `$PROFILE`" -ForegroundColor Yellow
+                Write-Host "             3. Windows Defender / antivirus scanning the directory" -ForegroundColor Yellow
+                Write-Host "             4. A Mason-installed LSP server still attached" -ForegroundColor Yellow
+                Write-Host "           Close the holder, then re-run .\bootstrap.ps1 (it's idempotent)." -ForegroundColor Yellow
+            }
+            throw
+        }
         New-Item -ItemType SymbolicLink -Path $Destination -Target $Source | Out-Null
         Write-Step "backed up $Destination → $backup; linked → $Source"
         return
