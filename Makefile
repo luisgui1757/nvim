@@ -3,12 +3,15 @@
 # tool they depend on isn't installed.
 
 .PHONY: test test-nvim test-shell test-starship test-tmux test-ghostty \
-        test-bootstrap test-static lint install dryrun deps deps-dryrun help
+        test-bootstrap test-static lint setup setup-dryrun install dryrun \
+        deps deps-dryrun help
 
 REPO := $(shell pwd)
 
 help:
 	@echo "Targets:"
+	@echo "  setup           — ONE-SHOT: deps + symlinks + plugins + LSP (recommended)"
+	@echo "  setup-dryrun    — preview every step of setup without acting"
 	@echo "  deps            — interactively install missing dependencies (nvim, starship, ...)"
 	@echo "  deps-dryrun     — print what deps would install without acting"
 	@echo "  install         — symlink configs into OS-appropriate paths"
@@ -22,6 +25,12 @@ help:
 	@echo "  test-bootstrap  — bats coverage of bootstrap.sh idempotency"
 	@echo "  test-static     — json/toml/yaml lint, editorconfig, invariants"
 	@echo "  lint            — shellcheck everything"
+
+setup:
+	@bash setup.sh
+
+setup-dryrun:
+	@bash setup.sh --dry-run
 
 deps:
 	@bash install-deps.sh

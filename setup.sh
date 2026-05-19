@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# setup.sh -- one-shot end-to-end install for macOS / Linux / WSL.
+#
+# Local usage (from a checked-out copy):
+#   ./setup.sh                     interactive: Y/n per dep, then symlink + sync
+#   ./setup.sh --all               non-interactive: install everything missing
+#   ./setup.sh --dry-run           preview every step
+#   ./setup.sh --skip-deps         already have nvim/starship; just bootstrap+sync
+#   ./setup.sh --skip-bootstrap    already symlinked; just sync plugins+LSP
+#   ./setup.sh --skip-nvim         skip nvim plugin + Mason sync
+#
+# Remote usage (no checkout yet):
+#   curl -fsSL https://raw.githubusercontent.com/luisgui1757/nvim/main/setup.sh | bash
+#
+# The remote form clones the repo to $DOTFILES_DEST (default ~/dotfiles)
+# and then re-invokes itself locally. Set DOTFILES_DEST=/some/other/path
+# in the environment if you want a different location.
+
+set -euo pipefail
+
+REPO_URL="https://github.com/luisgui1757/nvim.git"
+DEFAULT_DEST="$HOME/dotfiles"
+
+ALL=0
+DRY_RUN=0
+SKIP_DEPS=0
+SKIP_BOOTSTRAP=0
+SKIP_NVIM=0
+for arg in "$@"; do
+    case "$arg" in
+        --all|-y)         ALL=1 ;;
+        --dry-run)        DRY_RUN=1 ;;
+        --skip-deps)      SKIP_DEPS=1 ;;
+        --skip-bootstrap) SKIP_BOOTSTRAP=1 ;;
+        --skip-nvim)      SKIP_NVIM=1 ;;
+        -h|--help)        sed -n '2,18p' "$0"; exit 0 ;;
+        *) echo "Unknown arg: $arg" >&2; exit 2 ;;
+    esac
+done
+
+# ---- Locate / clone the repo -------------------------------------------------
+# When invoked via `curl | bash`, BASH_SOURCE is empty and there is no
+# script_dir. In that case we clone the repo and re-exec ourselves from
+# the clone so all downstream paths resolve correctly.
+SCRIPT_DIR=""
+if [[ -n "${BASH_SOURCE[0]:-}" ]] && [[ -f "${BASH_SOURCE[0]:-}" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+fi
+if [[ -z "$SCRIPT_DIR" ]] || [[ ! -f "$SCRIPT_DIR/bootstrap.sh" ]]; then
+    DEST="${DOTFILES_DEST:-$DEFAULT_DEST}"
+    if ! command -v git >/dev/null 2>&1; then
+        echo "setup.sh: git is required to clone the repo. Install git first." >&2
+        exit 1
+    fi
+    if [[ -d "$DEST/.git" ]]; then
+        echo "Repo already cloned at $DEST. Pulling latest."
+        git -C "$DEST" pull --ff-only
+    else
+        echo "Cloning $REPO_URL -> $DEST"
+        git clone "$REPO_URL" "$DEST"
+    fi
+    echo
+    echo "Re-invoking setup.sh from the clone."
+    exec bash "$DEST/setup.sh" "$@"
+fi
+
+cd "$SCRIPT_DIR"
+
+# ---- Self-link guard ---------------------------------------------------------
+# If the repo lives at one of the symlink targets we will later create,
+# bootstrap.sh will try to symlink the path onto itself. Detect and refuse.
+NVIM_TARGET="$HOME/.config/nvim"
+if [[ "$SCRIPT_DIR" == "$NVIM_TARGET" ]]; then
+    cat >&2 <<EOF
+setup.sh: the repo is currently at $SCRIPT_DIR, which is the same path
+that bootstrap.sh would symlink to itself.
+
+Move the repo elsewhere first (e.g. ~/dotfiles), then re-run setup.sh:
+
+    mv "$SCRIPT_DIR" "$HOME/dotfiles"
+    cd "$HOME/dotfiles"
+    ./setup.sh
+EOF
+    exit 1
+fi
+
+# ---- Forward flags to sub-scripts --------------------------------------------
+DEPS_FLAGS=()
+[[ "$ALL" -eq 1 ]]      && DEPS_FLAGS+=(--all)
+[[ "$DRY_RUN" -eq 1 ]]  && DEPS_FLAGS+=(--dry-run)
+
+BOOTSTRAP_FLAGS=()
+[[ "$DRY_RUN" -eq 1 ]]  && BOOTSTRAP_FLAGS+=(--dry-run)
+
+phase() {
+    echo
+    echo "================================================================"
+    echo "==  $1"
+    echo "================================================================"
+}
+
+# ---- Phase 1: dependencies ---------------------------------------------------
+if [[ "$SKIP_DEPS" -eq 0 ]]; then
+    phase "Phase 1/4: install dependencies"
+    bash "$SCRIPT_DIR/install-deps.sh" "${DEPS_FLAGS[@]}"
+else
+    echo
+    echo "skipped: Phase 1 (deps) via --skip-deps"
+fi
+
+# ---- Phase 2: symlink configs ------------------------------------------------
+if [[ "$SKIP_BOOTSTRAP" -eq 0 ]]; then
+    phase "Phase 2/4: symlink configs into place"
+    bash "$SCRIPT_DIR/bootstrap.sh" "${BOOTSTRAP_FLAGS[@]}"
+else
+    echo
+    echo "skipped: Phase 2 (bootstrap) via --skip-bootstrap"
+fi
+
+# ---- Phase 3: install Neovim plugins -----------------------------------------
+# ---- Phase 4: install LSP servers + formatters via Mason ---------------------
+if [[ "$SKIP_NVIM" -eq 0 ]] && [[ "$DRY_RUN" -eq 0 ]]; then
+    if command -v nvim >/dev/null 2>&1; then
+        phase "Phase 3/4: sync Neovim plugins (lazy.nvim)"
+        nvim --headless "+Lazy! sync" +qa || echo "  WARN: Lazy sync exited non-zero; check nvim --headless +Lazy +qa"
+
+        phase "Phase 4/4: install LSP servers + formatters (Mason)"
+        echo "  this can take 3-8 minutes on a fresh machine."
+        nvim --headless "+MasonToolsInstallSync" +qa || echo "  WARN: Mason install exited non-zero; run :Mason inside nvim to see what's missing"
+    else
+        echo
+        echo "skipped: Phase 3-4 (nvim plugins) -- nvim not on PATH yet."
+        echo "         Re-run: ./setup.sh --skip-deps --skip-bootstrap"
+    fi
+elif [[ "$DRY_RUN" -eq 1 ]]; then
+    echo
+    echo "skipped: Phase 3-4 (nvim plugins) in --dry-run mode"
+else
+    echo
+    echo "skipped: Phase 3-4 (nvim plugins) via --skip-nvim"
+fi
+
+# ---- Summary -----------------------------------------------------------------
+echo
+echo "================================================================"
+echo "==  setup.sh: done"
+echo "================================================================"
+echo
+echo "Repo:    $SCRIPT_DIR"
+echo "Try it:  nvim  (then <Space>fg for live grep, :wnf to save w/o format)"
+echo "Tests:   make test"
+echo
+if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "(dry run -- nothing was actually installed or changed)"
+fi

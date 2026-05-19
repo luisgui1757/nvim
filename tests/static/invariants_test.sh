@@ -79,6 +79,7 @@ done
 ps1_files=(
     bootstrap.ps1
     install-deps.ps1
+    setup.ps1
     shells/powershell_profile.ps1
     tests/bootstrap/*.ps1
     tests/powershell/*.ps1

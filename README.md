@@ -13,36 +13,68 @@
 
 ## Install
 
-Two steps: install dependencies (nvim, starship, fonts, …), then symlink configs.
+### One-shot, from scratch (recommended)
+
+No checkout needed. `setup.{sh,ps1}` clones the repo to `~/dotfiles`
+(or `%USERPROFILE%\dotfiles` on Windows), installs every dependency,
+symlinks every config, and finishes with `:Lazy! sync` +
+`:MasonToolsInstallSync` so LSP servers and formatters are downloaded
+before nvim even opens.
 
 ```bash
 # mac / linux / wsl
-./install-deps.sh --dry-run    # preview what would be installed
-./install-deps.sh              # Y/n per tool, smart-skip already-installed
-./install-deps.sh --all        # non-interactive: install everything
-
-./bootstrap.sh --dry-run       # preview the symlinks
-./bootstrap.sh                 # apply (idempotent)
+curl -fsSL https://raw.githubusercontent.com/luisgui1757/nvim/main/setup.sh | bash
 ```
 
 ```powershell
-# windows (requires Developer Mode OR elevated PowerShell for symlinks)
-.\install-deps.ps1 -DryRun
-.\install-deps.ps1               # Y/n per tool via winget (or choco/scoop fallback)
-.\install-deps.ps1 -All
-
-.\bootstrap.ps1 -DryRun
-.\bootstrap.ps1
-.\bootstrap.ps1 -MergeWindowsTerminal   # also merge WT fragment
+# windows -- run elevated OR with Developer Mode enabled (Settings ->
+# Privacy & security -> For developers -> Developer Mode = On)
+irm https://raw.githubusercontent.com/luisgui1757/nvim/main/setup.ps1 | iex
 ```
 
-The dependency installer prompts Y/n for each tool, skips anything already
-on PATH, and reports manual-install steps for tools the package manager
-does not carry (Ghostty on Linux outside Homebrew, Hack Nerd Font on
-Linux/Windows, win32yank on WSL, etc.).
+Add `--all` / `-All` for fully non-interactive (Y to every prompt).
+Add `--dry-run` / `-DryRun` to preview every step without touching disk.
 
-Re-running either script is a no-op when everything is already in place.
-Any pre-existing non-symlink target is backed up to `<target>.bak.<timestamp>`.
+### From an existing checkout
+
+```bash
+./setup.sh                       # Y/n per dep, end-to-end
+./setup.sh --all                 # non-interactive
+./setup.sh --dry-run             # preview
+./setup.sh --skip-deps           # already installed; just bootstrap + sync
+./setup.sh --skip-bootstrap      # already symlinked; just sync plugins + LSP
+make setup                       # same as ./setup.sh, via the Makefile
+```
+
+```powershell
+.\setup.ps1
+.\setup.ps1 -All
+.\setup.ps1 -DryRun
+.\setup.ps1 -MergeWindowsTerminal     # also apply the WT rose-pine fragment
+```
+
+### Or invoke the phases manually
+
+`setup.{sh,ps1}` is a thin orchestrator. Each phase is also a
+standalone, idempotent script:
+
+```bash
+./install-deps.sh                # phase 1: package-manager installs
+./bootstrap.sh                   # phase 2: symlink configs
+nvim --headless "+Lazy! sync" +qa            # phase 3: plugins
+nvim --headless "+MasonToolsInstallSync" +qa # phase 4: LSP + formatters
+```
+
+```powershell
+.\install-deps.ps1
+.\bootstrap.ps1
+nvim --headless "+Lazy! sync" "+qa"
+nvim --headless "+MasonToolsInstallSync" "+qa"
+```
+
+Every script is idempotent — re-running is a no-op when everything is
+already in place. Pre-existing non-symlink targets are backed up to
+`<target>.bak.<timestamp>` (collision-proof: `.1`, `.2`, … if reused).
 
 ## Test
 
