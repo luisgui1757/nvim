@@ -75,14 +75,18 @@ function New-SymLink {
             Write-Host "  FAIL     could not back up: $Destination" -ForegroundColor Red
             Write-Host "           reason: $($_.Exception.Message)" -ForegroundColor Red
             if ($_.Exception.Message -match 'being used by another process') {
-                Write-Host "           This usually means a running program has files open inside" -ForegroundColor Yellow
-                Write-Host "           the target. Most common culprits, in order:" -ForegroundColor Yellow
-                Write-Host "             1. A running Neovim / Neovide / nvim-qt:" -ForegroundColor Yellow
-                Write-Host "                Get-Process -Name nvim*, neovide -EA SilentlyContinue | Stop-Process -Force" -ForegroundColor Yellow
-                Write-Host "             2. Another PowerShell window that loaded the old `$PROFILE`" -ForegroundColor Yellow
-                Write-Host "             3. Windows Defender / antivirus scanning the directory" -ForegroundColor Yellow
-                Write-Host "             4. A Mason-installed LSP server still attached" -ForegroundColor Yellow
-                Write-Host "           Close the holder, then re-run .\bootstrap.ps1 (it's idempotent)." -ForegroundColor Yellow
+                # Use single-quoted strings — no interpolation needed, and
+                # this dodges the backtick-escapes-the-closing-quote bug that
+                # made an earlier "...loaded the old `$PROFILE`" string
+                # silently swallow the rest of the file at parse time.
+                Write-Host '           This usually means a running program has files open inside' -ForegroundColor Yellow
+                Write-Host '           the target. Most common culprits, in order:' -ForegroundColor Yellow
+                Write-Host '             1. A running Neovim / Neovide / nvim-qt:' -ForegroundColor Yellow
+                Write-Host '                Get-Process -Name nvim*, neovide -EA SilentlyContinue | Stop-Process -Force' -ForegroundColor Yellow
+                Write-Host '             2. Another PowerShell window that loaded the old $PROFILE' -ForegroundColor Yellow
+                Write-Host '             3. Windows Defender / antivirus scanning the directory' -ForegroundColor Yellow
+                Write-Host '             4. A Mason-installed LSP server still attached' -ForegroundColor Yellow
+                Write-Host '           Close the holder, then re-run .\bootstrap.ps1 (idempotent).' -ForegroundColor Yellow
             }
             throw
         }
@@ -150,8 +154,13 @@ if ($MergeWindowsTerminal) {
         Write-Warning "Windows Terminal settings.json not found; skipping merge."
     } else {
         $fragmentPath = Join-Path $RepoRoot 'windows-terminal\settings.fragment.jsonc'
-        $fragmentRaw = (Get-Content -Raw -LiteralPath $fragmentPath) -replace '(?ms)^\s*//.*?$', ''
-        $fragment = $fragmentRaw | ConvertFrom-Json
+        # Strip start-of-line // comments WITHOUT a regex literal that contains
+        # both // and $ — PS 5.1 has been observed mis-tokenizing that pattern
+        # and reporting "missing terminator" far downstream from the real issue.
+        $fragmentLines = Get-Content -LiteralPath $fragmentPath | Where-Object {
+            $_ -notmatch "^\s*//"
+        }
+        $fragment = ($fragmentLines -join "`n") | ConvertFrom-Json
 
         $backup = "$wtSettings.bak.$Timestamp"
         if ($DryRun) {
@@ -166,20 +175,25 @@ if ($MergeWindowsTerminal) {
                 $current | Add-Member -NotePropertyName profiles -NotePropertyValue ([pscustomobject]@{}) -Force
             }
 
-            # Keep the next line as ONE line. Windows PowerShell 5.1
-            # rejects newline-separated string literals inside an array
-            # literal in an assignment context. Single-line @(...) is
-            # the only form that parses across 5.1 and 7.
-            $topLevelKeys = @('copyFormatting','copyOnSelect','firstWindowPreference','initialRows','useAcrylicInTabRow','windowingBehavior','theme')
-            foreach ($key in $topLevelKeys) {
-                if ($null -ne $fragment.$key) {
-                    if ($null -eq $current.$key) {
-                        $current | Add-Member -NotePropertyName $key -NotePropertyValue $fragment.$key -Force
-                    } else {
-                        $current.$key = $fragment.$key
-                    }
+            # Top-level scalar merge. Written as straight-line if-statements
+            # rather than a foreach over an array literal because some PS 5.1
+            # parser quirks have made array literals unreliable in this exact
+            # block on user machines.
+            function Set-OrAdd-Property {
+                param($obj, [string]$name, $value)
+                if ($null -eq $obj.$name) {
+                    $obj | Add-Member -NotePropertyName $name -NotePropertyValue $value -Force
+                } else {
+                    $obj.$name = $value
                 }
             }
+            if ($null -ne $fragment.copyFormatting)        { Set-OrAdd-Property $current "copyFormatting"        $fragment.copyFormatting }
+            if ($null -ne $fragment.copyOnSelect)          { Set-OrAdd-Property $current "copyOnSelect"          $fragment.copyOnSelect }
+            if ($null -ne $fragment.firstWindowPreference) { Set-OrAdd-Property $current "firstWindowPreference" $fragment.firstWindowPreference }
+            if ($null -ne $fragment.initialRows)           { Set-OrAdd-Property $current "initialRows"           $fragment.initialRows }
+            if ($null -ne $fragment.theme)                 { Set-OrAdd-Property $current "theme"                 $fragment.theme }
+            if ($null -ne $fragment.useAcrylicInTabRow)    { Set-OrAdd-Property $current "useAcrylicInTabRow"    $fragment.useAcrylicInTabRow }
+            if ($null -ne $fragment.windowingBehavior)     { Set-OrAdd-Property $current "windowingBehavior"     $fragment.windowingBehavior }
 
             if ($null -eq $current.profiles.defaults) {
                 $current.profiles | Add-Member -NotePropertyName defaults -NotePropertyValue $fragment.profiles.defaults -Force
