@@ -82,21 +82,16 @@ vim.api.nvim_create_autocmd("BufWritePost", {
 	end,
 })
 
--- Replace nvim's default :EditQuery with a parser-aware variant that
--- no-ops gracefully on buffers without a treesitter parser. The default
--- assert-crashes with "no parser for lang 'nil'" if you invoke it on a
--- [No Name] buffer or anything else without TS. This must live here
--- (not in treesitter.lua) because treesitter is lazy-loaded — the bare
--- default is reachable before BufReadPost fires.
-vim.api.nvim_create_user_command("EditQuery", function(opts)
-	local lang = opts.fargs[1]
-	if not lang then
-		local ok, parser = pcall(vim.treesitter.get_parser, 0)
-		if not ok or not parser then
-			vim.notify("EditQuery: this buffer has no treesitter parser", vim.log.levels.WARN)
-			return
-		end
-		lang = parser:lang()
+-- Drop nvim's default :EditQuery user command. We don't use the
+-- treesitter query editor, and keeping it around made :E<Enter>
+-- resolve to :EditQuery instead of netrw's :Explore.
+pcall(vim.api.nvim_del_user_command, "EditQuery")
+
+-- :E opens netrw at the cwd; :E <path> edits that file/dir.
+vim.api.nvim_create_user_command("E", function(opts)
+	if opts.args == "" then
+		vim.cmd("Explore")
+	else
+		vim.cmd("edit " .. vim.fn.fnameescape(opts.args))
 	end
-	pcall(vim.treesitter.query.edit, lang)
-end, { force = true, nargs = "?", desc = "Edit treesitter query (safe on parser-less buffers)" })
+end, { nargs = "?", complete = "file", desc = "Open netrw, or edit the given file" })

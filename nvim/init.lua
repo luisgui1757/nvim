@@ -22,13 +22,14 @@ require("lazy").setup({
 	change_detection = { notify = false },
 	performance = {
 		rtp = {
+			-- Netrw stays enabled — it provides :Explore, gx URL-opening,
+			-- and is what `:E` resolves to.
 			disabled_plugins = {
 				"gzip",
 				"tarPlugin",
 				"tohtml",
 				"tutor",
 				"zipPlugin",
-				"netrwPlugin",
 			},
 		},
 	},
