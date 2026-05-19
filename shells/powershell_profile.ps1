@@ -1,4 +1,26 @@
 # PowerShell profile -- cross-version (5.1 + 7+), Rose Pine styled.
+#
+# Cardinal rule: this profile MUST NOT emit anything to stdout when loaded
+# by a non-interactive subprocess. Git credential helpers, Conan wrappers,
+# CI scripts, and VS Codes TerminalShellIntegration all spawn powershell
+# and inherit $PROFILE; any prompt/UX work here either wastes time or
+# leaks output that the parent tool tries to parse as command output.
+
+# ---- Fast bail-out for non-interactive hosts ---------------------------------
+# Credential helpers and pipe-driven invocations dont get a real console host.
+# When in doubt, do nothing -- the prompt UX has zero value in those cases.
+$interactive = $true
+try {
+    if ($Host.Name -notin @('ConsoleHost', 'Visual Studio Code Host', 'Windows PowerShell ISE Host')) {
+        $interactive = $false
+    }
+    if (-not [Environment]::UserInteractive) {
+        $interactive = $false
+    }
+} catch {
+    $interactive = $false
+}
+if (-not $interactive) { return }
 
 $ErrorActionPreference = 'Continue'
 
@@ -13,16 +35,19 @@ $script:CacheDir = if ($env:LOCALAPPDATA) {
     [System.IO.Path]::GetTempPath()
 }
 if (-not (Test-Path -LiteralPath $script:CacheDir)) {
-    New-Item -ItemType Directory -Force -Path $script:CacheDir | Out-Null
+    try { New-Item -ItemType Directory -Force -Path $script:CacheDir | Out-Null } catch { }
 }
 $script:StarshipInitPath = Join-Path $script:CacheDir 'starship.ps1'
 
+# Windows PowerShell 5.1 Join-Path takes only ONE child path. PS 6+ allows
+# additional child paths via -AdditionalChildPath. Use nested Join-Path so
+# the same source works on both.
 $script:HomeDir = if ($env:USERPROFILE) { $env:USERPROFILE } elseif ($env:HOME) { $env:HOME } else { '~' }
-$script:StarshipConfigPath = $(if ($env:STARSHIP_CONFIG) {
+$script:StarshipConfigPath = if ($env:STARSHIP_CONFIG) {
     $env:STARSHIP_CONFIG
 } else {
-    Join-Path $script:HomeDir '.config' 'starship.toml'
-})
+    Join-Path (Join-Path $script:HomeDir '.config') 'starship.toml'
+}
 
 # ---- Precompile Starship init (idempotent; regenerates when toml is newer) ---
 function Confirm-StarshipInitScript {
@@ -48,37 +73,65 @@ function Confirm-StarshipInitScript {
 }
 
 if (Get-Command starship -ErrorAction SilentlyContinue) {
-    Confirm-StarshipInitScript
-    . $script:StarshipInitPath
+    try {
+        Confirm-StarshipInitScript
+        . $script:StarshipInitPath
+    } catch {
+        # Cached starship init may be stale or corrupt from an interrupted
+        # write. Nuke it and rebuild once; if it still fails, give up silently
+        # rather than spam the prompt on every shell launch.
+        Write-Warning ("Starship init failed: " + $_.Exception.Message + ". Regenerating.")
+        Remove-Item -LiteralPath $script:StarshipInitPath -Force -ErrorAction SilentlyContinue
+        try {
+            Confirm-StarshipInitScript
+            . $script:StarshipInitPath
+        } catch {
+            Write-Warning ("Starship init still failing: " + $_.Exception.Message)
+        }
+    }
 }
 
 # ---- PSReadLine (history prediction + Rose Pine colors + menu complete) ------
 if (Get-Module -ListAvailable PSReadLine) {
     Import-Module PSReadLine -ErrorAction SilentlyContinue
-    Set-PSReadLineOption -EditMode Windows
-    Set-PSReadLineOption -BellStyle None
-    Set-PSReadLineOption -HistoryNoDuplicates
-    Set-PSReadLineOption -HistorySearchCursorMovesToEnd
-    if ((Get-Module PSReadLine).Version -ge [Version]'2.2.0') {
-        Set-PSReadLineOption -PredictionSource HistoryAndPlugin
-        Set-PSReadLineOption -PredictionViewStyle ListView
+
+    # Options that work on every PSReadLine version since 2.0:
+    try { Set-PSReadLineOption -EditMode Windows -ErrorAction Stop } catch { }
+    try { Set-PSReadLineOption -BellStyle None -ErrorAction Stop } catch { }
+    try { Set-PSReadLineOption -HistoryNoDuplicates -ErrorAction Stop } catch { }
+    try { Set-PSReadLineOption -HistorySearchCursorMovesToEnd -ErrorAction Stop } catch { }
+
+    # PredictionSource + PredictionViewStyle landed in PSReadLine 2.1 / 2.2.
+    # Older PS 5.1 installs may ship PSReadLine 2.0 which rejects these args.
+    $psrl = Get-Module PSReadLine
+    if ($psrl -and $psrl.Version -ge [Version]'2.2.0') {
+        try {
+            Set-PSReadLineOption -PredictionSource HistoryAndPlugin -ErrorAction Stop
+            Set-PSReadLineOption -PredictionViewStyle ListView -ErrorAction Stop
+        } catch { }
+    } elseif ($psrl -and $psrl.Version -ge [Version]'2.1.0') {
+        try { Set-PSReadLineOption -PredictionSource History -ErrorAction Stop } catch { }
     }
-    Set-PSReadLineOption -Colors @{
-        Command            = '#c4a7e7'  # iris
-        Parameter          = '#9ccfd8'  # foam
-        String             = '#f6c177'  # gold
-        Operator           = '#ebbcba'  # rose
-        Variable           = '#e0def4'  # text
-        Number             = '#eb6f92'  # love
-        Type               = '#9ccfd8'  # foam
-        Comment            = '#6e6a86'  # muted
-        Keyword            = '#c4a7e7'  # iris
-        Error              = '#eb6f92'  # love
-        Selection          = '#26233a'  # overlay
-        ContinuationPrompt = '#6e6a86'
-        Default            = '#e0def4'
-    }
-    Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
-    Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
-    Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
+
+    try {
+        Set-PSReadLineOption -Colors @{
+            Command            = '#c4a7e7'
+            Parameter          = '#9ccfd8'
+            String             = '#f6c177'
+            Operator           = '#ebbcba'
+            Variable           = '#e0def4'
+            Number             = '#eb6f92'
+            Type               = '#9ccfd8'
+            Comment            = '#6e6a86'
+            Keyword            = '#c4a7e7'
+            Error              = '#eb6f92'
+            Selection          = '#26233a'
+            ContinuationPrompt = '#6e6a86'
+            Default            = '#e0def4'
+        }
+    } catch { }
+
+    try { Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete -ErrorAction Stop } catch { }
+    try { Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward -ErrorAction Stop } catch { }
+    try { Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward -ErrorAction Stop } catch { }
 }
