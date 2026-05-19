@@ -36,4 +36,19 @@ describe("vim-options", function()
 	it("mapleader is space", function()
 		assert.are.equal(" ", vim.g.mapleader)
 	end)
+
+	it(":EditQuery is overridden with a parser-aware safe variant", function()
+		local cmds = vim.api.nvim_get_commands({})
+		assert.is_not_nil(cmds.EditQuery, ":EditQuery user command is missing")
+		assert.is_truthy((cmds.EditQuery.definition or ""):match("parser") or
+			(cmds.EditQuery.description or ""):lower():match("parser"),
+			":EditQuery override should be the safe variant (description mentions parser handling)")
+	end)
+
+	it(":EditQuery does not crash on a parser-less [No Name] buffer", function()
+		-- The whole point of the override: the bare nvim default asserts and
+		-- prints a stack trace on a fresh buffer with no filetype/parser.
+		local ok, err = pcall(vim.cmd, "EditQuery")
+		assert.is_true(ok, ":EditQuery should never throw — got: " .. tostring(err))
+	end)
 end)
