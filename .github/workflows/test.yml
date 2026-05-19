@@ -20,6 +20,14 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           ~/.cargo/bin/cargo binstall -y taplo-cli hyperfine || true
           pip install --user yamllint editorconfig-checker
+          # PowerShell so tests/static/ps1_parse.sh catches .ps1 syntax regressions
+          curl -fL -o /tmp/pwsh.tar.gz "https://github.com/PowerShell/PowerShell/releases/latest/download/powershell-7.4.6-linux-x64.tar.gz" || true
+          if [ -s /tmp/pwsh.tar.gz ]; then
+            sudo mkdir -p /opt/microsoft/powershell/7
+            sudo tar -xzf /tmp/pwsh.tar.gz -C /opt/microsoft/powershell/7
+            sudo chmod +x /opt/microsoft/powershell/7/pwsh
+            sudo ln -sf /opt/microsoft/powershell/7/pwsh /usr/local/bin/pwsh
+          fi
           # Neovim 0.11 (stable)
           curl -fL -o /tmp/nvim.appimage https://github.com/neovim/neovim/releases/download/stable/nvim.appimage
           chmod +x /tmp/nvim.appimage
