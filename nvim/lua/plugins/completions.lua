@@ -3,7 +3,10 @@ return {
 		"L3MON4D3/LuaSnip",
 		event = "InsertEnter",
 		version = "v2.*",
-		build = "make install_jsregexp",
+		-- jsregexp is OPTIONAL — only required for snippet transformations
+		-- like ${1/regex/replace/}. Skip the build on machines without make
+		-- (Windows by default) so first-launch doesn't fail loudly.
+		build = (vim.fn.executable("make") == 1) and "make install_jsregexp" or nil,
 		dependencies = { "rafamadriz/friendly-snippets" },
 		config = function()
 			require("luasnip.loaders.from_vscode").lazy_load()
