@@ -1,0 +1,43 @@
+return {
+	"stevearc/conform.nvim",
+	event = { "BufReadPre", "BufNewFile" },
+	cmd = { "ConformInfo" },
+	opts = {
+		formatters_by_ft = {
+			lua = { "stylua" },
+			python = { "ruff_format", "ruff_fix" },
+			cpp = { "clang_format" },
+			c = { "clang_format" },
+			rust = { "rustfmt" },
+			cmake = { "gersemi" },
+			sh = { "shfmt" },
+			bash = { "shfmt" },
+			zsh = { "shfmt" },
+			json = { "prettier" },
+			jsonc = { "prettier" },
+			yaml = { "prettier" },
+			markdown = { "prettier" },
+			-- ps1 falls back to LSP (powershell_es) via lsp_format = "fallback"
+		},
+		format_on_save = function(bufnr)
+			if vim.b[bufnr].skip_format_on_save then
+				return
+			end
+			return { timeout_ms = 3000, lsp_format = "fallback" }
+		end,
+		formatters = {
+			shfmt = { prepend_args = { "-i", "2", "-ci" } },
+			rustfmt = { prepend_args = { "--edition=2021" } },
+		},
+	},
+	keys = {
+		{
+			"<leader>gf",
+			function()
+				require("conform").format({ async = true, lsp_format = "fallback" })
+			end,
+			desc = "Format buffer",
+			mode = { "n", "v" },
+		},
+	},
+}

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Claude Code status line
-# Shows: cwd | model | context usage (colored green/yellow/red)
+# Shows: cwd | model [effort] | context usage (colored green/yellow/red)
 
 input=$(cat)
 
