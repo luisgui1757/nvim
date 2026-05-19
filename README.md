@@ -13,19 +13,33 @@
 
 ## Install
 
+Two steps: install dependencies (nvim, starship, fonts, …), then symlink configs.
+
 ```bash
 # mac / linux / wsl
-./bootstrap.sh            # see what would happen
-./bootstrap.sh            # again, but actually do it (idempotent)
-./bootstrap.sh --dry-run  # explicit dry-run mode
+./install-deps.sh --dry-run    # preview what would be installed
+./install-deps.sh              # Y/n per tool, smart-skip already-installed
+./install-deps.sh --all        # non-interactive: install everything
+
+./bootstrap.sh --dry-run       # preview the symlinks
+./bootstrap.sh                 # apply (idempotent)
 ```
 
 ```powershell
-# windows (requires Developer Mode OR elevated PowerShell)
+# windows (requires Developer Mode OR elevated PowerShell for symlinks)
+.\install-deps.ps1 -DryRun
+.\install-deps.ps1               # Y/n per tool via winget (or choco/scoop fallback)
+.\install-deps.ps1 -All
+
 .\bootstrap.ps1 -DryRun
 .\bootstrap.ps1
 .\bootstrap.ps1 -MergeWindowsTerminal   # also merge WT fragment
 ```
+
+The dependency installer prompts Y/n for each tool, skips anything already
+on PATH, and reports manual-install steps for tools the package manager
+does not carry (Ghostty on Linux outside Homebrew, Hack Nerd Font on
+Linux/Windows, win32yank on WSL, etc.).
 
 Re-running either script is a no-op when everything is already in place.
 Any pre-existing non-symlink target is backed up to `<target>.bak.<timestamp>`.

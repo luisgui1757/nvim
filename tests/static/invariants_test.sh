@@ -76,12 +76,14 @@ done
 # without a BOM as ANSI / CP-1252; UTF-8 multi-byte chars (em-dash,
 # arrows) get mis-tokenized and cause "Missing closing ')'" parse
 # errors. Save-as-UTF-8-BOM would also work, but ASCII is simpler.
-ps1_non_ascii=$(LC_ALL=C grep -lP "[^\x00-\x7F]" \
-    bootstrap.ps1 \
-    shells/powershell_profile.ps1 \
-    tests/bootstrap/*.ps1 \
-    tests/powershell/*.ps1 \
-    2>/dev/null || true)
+ps1_files=(
+    bootstrap.ps1
+    install-deps.ps1
+    shells/powershell_profile.ps1
+    tests/bootstrap/*.ps1
+    tests/powershell/*.ps1
+)
+ps1_non_ascii=$(LC_ALL=C grep -lP "[^\x00-\x7F]" "${ps1_files[@]}" 2>/dev/null || true)
 if [[ -n "$ps1_non_ascii" ]]; then
     echo "FAIL: non-ASCII chars in .ps1 file(s) (PS 5.1 will mis-parse):"
     echo "$ps1_non_ascii" | sed 's/^/  /'
@@ -96,8 +98,7 @@ fi
 # producing "Missing closing ')' in expression" errors that point at
 # the wrong line. Easier to ban stray apostrophes in .ps1 comments than
 # to debug the next occurrence.
-ps1_comment_apos=$(grep -nE "^\s*#.*'" bootstrap.ps1 shells/powershell_profile.ps1 \
-    tests/bootstrap/*.ps1 tests/powershell/*.ps1 2>/dev/null || true)
+ps1_comment_apos=$(grep -nE "^\s*#.*'" "${ps1_files[@]}" 2>/dev/null || true)
 if [[ -n "$ps1_comment_apos" ]]; then
     echo "FAIL: apostrophe in a .ps1 comment (PS 5.1 may mis-tokenize):"
     echo "$ps1_comment_apos" | sed 's/^/  /'
