@@ -6,80 +6,146 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   ubuntu:
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      - name: Dogfood install-deps dry run
+        run: |
+          set -euxo pipefail
+          ./install-deps.sh --dry-run --all
       - name: Install deps
         run: |
+          set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y shellcheck tmux zsh bats
-          sudo snap install starship --classic || curl -sS https://starship.rs/install.sh | sh -s -- -y
-          curl -fsSL https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          ~/.cargo/bin/cargo binstall -y taplo-cli hyperfine || true
-          pip install --user yamllint editorconfig-checker
-          # PowerShell so tests/static/ps1_parse.sh catches .ps1 syntax regressions
-          curl -fL -o /tmp/pwsh.tar.gz "https://github.com/PowerShell/PowerShell/releases/latest/download/powershell-7.4.6-linux-x64.tar.gz" || true
-          if [ -s /tmp/pwsh.tar.gz ]; then
-            sudo mkdir -p /opt/microsoft/powershell/7
-            sudo tar -xzf /tmp/pwsh.tar.gz -C /opt/microsoft/powershell/7
-            sudo chmod +x /opt/microsoft/powershell/7/pwsh
-            sudo ln -sf /opt/microsoft/powershell/7/pwsh /usr/local/bin/pwsh
+          sudo apt-get install -y ca-certificates curl shellcheck tmux zsh bats python3-pip
+          if ! sudo snap install starship --classic; then
+            curl -fsSL https://starship.rs/install.sh -o /tmp/starship-install.sh
+            sh /tmp/starship-install.sh -y
           fi
-          # Neovim 0.11 (stable)
-          curl -fL -o /tmp/nvim.appimage https://github.com/neovim/neovim/releases/download/stable/nvim.appimage
-          chmod +x /tmp/nvim.appimage
-          sudo mv /tmp/nvim.appimage /usr/local/bin/nvim
+          curl -fsSL https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh -o /tmp/cargo-binstall.sh
+          bash /tmp/cargo-binstall.sh
+          "$HOME/.cargo/bin/cargo-binstall" -y taplo-cli hyperfine
+          python3 -m pip install --user --break-system-packages yamllint editorconfig-checker
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+
+          # PowerShell so tests/static/ps1_parse.sh catches .ps1 syntax regressions.
+          source /etc/os-release
+          curl -fsSL "https://packages.microsoft.com/config/ubuntu/${VERSION_ID}/packages-microsoft-prod.deb" -o /tmp/packages-microsoft-prod.deb
+          sudo dpkg -i /tmp/packages-microsoft-prod.deb
+          rm /tmp/packages-microsoft-prod.deb
+          sudo apt-get update
+          sudo apt-get install -y powershell
+          pwsh -NoProfile -Command '$PSVersionTable.PSVersion'
+
+          # Neovim stable release tarball avoids AppImage/FUSE and old asset-name drift.
+          curl -fsSL https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz -o /tmp/nvim-linux-x86_64.tar.gz
+          sudo rm -rf /opt/nvim-linux-x86_64
+          sudo tar -xzf /tmp/nvim-linux-x86_64.tar.gz -C /opt
+          sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+          nvim --version | head -n 1
       - name: Static lint
-        run: make test-static
+        run: |
+          set -euo pipefail
+          make test-static
       - name: shellcheck
-        run: make lint
+        run: |
+          set -euo pipefail
+          make lint
       - name: Bootstrap idempotency
-        run: make test-bootstrap
+        run: |
+          set -euo pipefail
+          make test-bootstrap
       - name: Shell smoke
-        run: make test-shell
+        run: |
+          set -euo pipefail
+          make test-shell
       - name: Starship render + perf
-        run: make test-starship
+        run: |
+          set -euo pipefail
+          make test-starship
       - name: Tmux load
-        run: make test-tmux
+        run: |
+          set -euo pipefail
+          make test-tmux
       - name: Nvim plenary busted
-        run: make test-nvim
+        run: |
+          set -euo pipefail
+          make test-nvim
 
   macos:
-    runs-on: macos-latest
-    timeout-minutes: 10
+    runs-on: macos-15
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      - name: Dogfood install-deps dry run
+        run: |
+          set -euxo pipefail
+          ./install-deps.sh --dry-run --all
       - name: Install deps
         run: |
-          brew update
+          set -euxo pipefail
           brew install shellcheck neovim tmux starship taplo hyperfine yamllint editorconfig-checker bats-core
       - name: Make test (full matrix)
-        run: make test
+        run: |
+          set -euo pipefail
+          make test
 
   windows:
-    runs-on: windows-latest
-    timeout-minutes: 12
+    runs-on: windows-2025
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      - name: Dogfood install-deps dry run
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          .\install-deps.ps1 -DryRun -All
       - name: Install deps
         shell: pwsh
         run: |
-          Install-Module -Name Pester -Force -Scope CurrentUser -RequiredVersion 5.5.0
-          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
-          # Starship via winget if available
-          if (Get-Command winget -ErrorAction SilentlyContinue) {
-            winget install --id Starship.Starship -e --accept-source-agreements --accept-package-agreements
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          if (Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue) {
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           }
+          $pester = Get-Module -ListAvailable Pester |
+            Where-Object { $_.Version -ge [version]'5.0.0' } |
+            Sort-Object Version -Descending |
+            Select-Object -First 1
+          if (-not $pester) {
+            Install-Module -Name Pester -Force -Scope CurrentUser -MinimumVersion 5.5.0 -SkipPublisherCheck
+          }
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -SkipPublisherCheck
+          Import-Module Pester -MinimumVersion 5.0.0 -Force
+          Import-Module PSScriptAnalyzer -Force
+          Get-Module Pester, PSScriptAnalyzer | Format-Table Name,Version,Path -AutoSize
       - name: PSScriptAnalyzer
         shell: pwsh
         run: |
-          $diag = Invoke-ScriptAnalyzer -Path shells/powershell_profile.ps1 -Severity Warning,Error
-          $diag | Format-Table
-          if ($diag.Count -gt 0) { exit 1 }
+          $ErrorActionPreference = 'Stop'
+          Import-Module PSScriptAnalyzer -Force
+          $diag = @(Invoke-ScriptAnalyzer -Path shells/powershell_profile.ps1 -Severity Warning,Error)
+          $diag | Format-Table -AutoSize
+          if ($diag.Count -gt 0) { throw "PSScriptAnalyzer reported $($diag.Count) warning/error finding(s)." }
       - name: Pester (profile + bootstrap)
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+          Import-Module Pester -MinimumVersion 5.0.0 -Force
           Invoke-Pester -Path tests/powershell, tests/bootstrap -Output Detailed

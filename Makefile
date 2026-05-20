@@ -2,9 +2,7 @@
 # current OS; sub-targets skip themselves with a clear message when the
 # tool they depend on isn't installed.
 
-.PHONY: test test-nvim test-shell test-starship test-tmux test-ghostty \
-        test-bootstrap test-static lint setup setup-dryrun install dryrun \
-        deps deps-dryrun help
+.PHONY: test test-nvim test-shell test-starship test-tmux test-ghostty test-bootstrap test-static lint setup setup-dryrun install dryrun deps deps-dryrun help
 
 REPO := $(shell pwd)
 

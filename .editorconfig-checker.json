@@ -1,0 +1,14 @@
+{
+  "IgnoreDefaults": false,
+  "Exclude": [
+    "^tests/\\.cache/",
+    "^nvim/lazy-lock\\.json$",
+    "^claude/",
+    "^\\.claude/",
+    "node_modules/",
+    "vendor/"
+  ],
+  "Disable": {
+    "IndentSize": true
+  }
+}

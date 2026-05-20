@@ -18,7 +18,7 @@ trim_trailing_whitespace = false
 indent_style = tab
 
 [*.{ps1,psm1,psd1}]
-end_of_line = crlf
+end_of_line = lf
 indent_size = 4
 
 [*.{bat,cmd}]
@@ -28,6 +28,6 @@ indent_size = 4
 [*.{toml,yml,yaml,json,jsonc,lua,sh,zsh,bash}]
 indent_size = 2
 
-[nvim/**.lua]
+[*.lua]
 indent_style = tab
 indent_size = 2
