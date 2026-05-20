@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
-# Verify the zshrc precompile cache mechanism: created on first run,
-# reused on second, regenerated when toml is newer.
+# Verify the zshrc precompile cache mechanism:
+#   1) created on first run,
+#   2) NOT regenerated on second run when the toml has not been touched,
+#   3) regenerated when the toml is newer.
+#
+# Uses content-sentinel checks instead of mtime comparison so the test is
+# robust against filesystem timestamp precision quirks (Linux nanosecond vs
+# macOS second; CI cp + immediate-create races; etc.).
 set -euo pipefail
 
 if ! command -v zsh >/dev/null 2>&1; then
@@ -14,15 +20,14 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 TMP_HOME="$(mktemp -d)"
-TMP_CONFIG="$(mktemp -d)/starship.toml"
-trap 'rm -rf "$TMP_HOME" "$(dirname "$TMP_CONFIG")"' EXIT
+TMP_CONFIG_DIR="$(mktemp -d)"
+TMP_CONFIG="$TMP_CONFIG_DIR/starship.toml"
+trap 'rm -rf "$TMP_HOME" "$TMP_CONFIG_DIR"' EXIT
 
-# Copy the toml into a scratch dir so we don't dirty the repo (CI lint depends
-# on a clean worktree). Force its mtime well into the past so the cache (which
-# the first run creates with mtime = now) is reliably newer -- on Linux's
-# nanosecond-precision filesystems the cp + immediate-create race otherwise
-# leaves the toml very slightly newer than the cache.
+# Copy the toml into a scratch dir so we don't dirty the repo.
 cp "$REPO_ROOT/starship/starship.toml" "$TMP_CONFIG"
+# Force the toml's mtime well into the past so the cache (mtime = now)
+# is reliably newer.
 touch -t 202001010000 "$TMP_CONFIG"
 
 run_shell() {
@@ -31,28 +36,31 @@ run_shell() {
 }
 
 cache="$TMP_HOME/.cache/starship-init.zsh"
+SENTINEL="# precompile-test-sentinel-$$"
 
 # 1) First run creates the cache.
 [[ -f "$cache" ]] && rm -f "$cache"
 run_shell
 [[ -s "$cache" ]] || { echo "FAIL: cache not created on first run"; exit 1; }
 
-# 2) Second run reuses it (mtime unchanged).
-mtime1=$(stat -f %m "$cache" 2>/dev/null || stat -c %Y "$cache")
-sleep 1
+# 2) Insert a sentinel line into the cache. Second run must NOT regenerate
+#    (otherwise the sentinel disappears). This bypasses every fs-mtime
+#    precision quirk that an mtime comparison would have.
+printf '\n%s\n' "$SENTINEL" >> "$cache"
 run_shell
-mtime2=$(stat -f %m "$cache" 2>/dev/null || stat -c %Y "$cache")
-if [[ "$mtime1" != "$mtime2" ]]; then
-    echo "FAIL: cache regenerated on second run (config wasn't newer)"
+if ! grep -Fq "$SENTINEL" "$cache"; then
+    echo "FAIL: cache regenerated on second run (config was NOT newer)"
     exit 1
 fi
 
-# 3) Touching the scratch toml makes the next run regenerate the cache.
-sleep 1
+# 3) Touching the toml makes the next run regenerate the cache (sentinel
+#    must be gone).
 touch "$TMP_CONFIG"
+# Tiny sleep to ensure touch's mtime lands AFTER the cache's mtime, even
+# on filesystems with coarse-grained timestamp resolution.
+sleep 1
 run_shell
-mtime3=$(stat -f %m "$cache" 2>/dev/null || stat -c %Y "$cache")
-if [[ "$mtime3" -le "$mtime2" ]]; then
+if grep -Fq "$SENTINEL" "$cache"; then
     echo "FAIL: touching the toml did not trigger regeneration"
     exit 1
 fi
