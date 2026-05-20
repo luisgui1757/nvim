@@ -17,10 +17,12 @@ if grep -E '\]\(style\)' "$REPO_ROOT/starship/starship.toml" >/dev/null; then
     exit 1
 fi
 
-# Dynamic render — needs a writable working directory.
+# Dynamic render -- needs a writable git working directory.
 TMP_REPO="$(mktemp -d)"
 trap 'rm -rf "$TMP_REPO"' EXIT
-( cd "$TMP_REPO" && git init -q && git commit --allow-empty -qm "test" )
+( cd "$TMP_REPO" \
+    && git init -q \
+    && git -c user.email=ci@example.com -c user.name=ci commit --allow-empty -qm "test" )
 
 out=$(STARSHIP_CONFIG="$REPO_ROOT/starship/starship.toml" \
       starship prompt --terminal-width 120 --jobs 0 --status 0 --cmd-duration 0 2>&1)

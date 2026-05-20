@@ -19,9 +19,14 @@ budget_ms=80
 if [[ "${CI:-}" == "true" ]]; then budget_ms=150; fi
 
 # Use a real git repo as cwd so the git_status module actually runs.
+# Self-configure user.email/name so the commit works even on CI runners
+# without a global git identity.
 TMP_REPO="$(mktemp -d)"
 trap 'rm -rf "$TMP_REPO"' EXIT
-( cd "$TMP_REPO" && git init -q && git commit --allow-empty -qm "test" && touch foo )
+( cd "$TMP_REPO" \
+    && git init -q \
+    && git -c user.email=ci@example.com -c user.name=ci commit --allow-empty -qm "test" \
+    && touch foo )
 
 JSON_OUT="$TMP_REPO/hyperfine.json"
 (
