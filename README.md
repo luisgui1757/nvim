@@ -23,13 +23,13 @@ before nvim even opens.
 
 ```bash
 # mac / linux / wsl
-curl -fsSL https://raw.githubusercontent.com/luisgui1757/nvim/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.sh | bash
 ```
 
 ```powershell
 # windows -- run elevated OR with Developer Mode enabled (Settings ->
 # Privacy & security -> For developers -> Developer Mode = On)
-irm https://raw.githubusercontent.com/luisgui1757/nvim/main/setup.ps1 | iex
+irm https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.ps1 | iex
 ```
 
 Add `--all` / `-All` for fully non-interactive (Y to every prompt).

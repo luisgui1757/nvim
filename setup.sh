@@ -10,7 +10,7 @@
 #   ./setup.sh --skip-nvim         skip nvim plugin + Mason sync
 #
 # Remote usage (no checkout yet):
-#   curl -fsSL https://raw.githubusercontent.com/luisgui1757/nvim/main/setup.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.sh | bash
 #
 # The remote form clones the repo to $DOTFILES_DEST (default ~/dotfiles)
 # and then re-invokes itself locally. Set DOTFILES_DEST=/some/other/path
@@ -18,7 +18,7 @@
 
 set -euo pipefail
 
-REPO_URL="https://github.com/luisgui1757/nvim.git"
+REPO_URL="https://github.com/luisgui1757/dotfiles.git"
 DEFAULT_DEST="$HOME/dotfiles"
 
 ALL=0

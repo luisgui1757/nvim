@@ -10,7 +10,7 @@
 #   .\setup.ps1 -MergeWindowsTerminal     also merge the WT rose-pine fragment
 #
 # Remote usage (no checkout yet):
-#   irm https://raw.githubusercontent.com/luisgui1757/nvim/main/setup.ps1 | iex
+#   irm https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.ps1 | iex
 #
 # The remote form clones the repo to $env:DOTFILES_DEST (default
 # %USERPROFILE%\dotfiles) and re-invokes itself locally.
@@ -28,7 +28,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$RepoUrl     = 'https://github.com/luisgui1757/nvim.git'
+$RepoUrl     = 'https://github.com/luisgui1757/dotfiles.git'
 $DefaultDest = Join-Path $env:USERPROFILE 'dotfiles'
 
 # ---- Locate / clone the repo -------------------------------------------------
