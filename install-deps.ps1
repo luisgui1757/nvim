@@ -49,7 +49,7 @@ function Install-Scoop {
     }
 }
 
-# Ask early — needed by the catalog logic below.
+# Ask early -- needed by the catalog logic below.
 function Ask {
     param([string]$prompt)
     if ($All) { return $true }
@@ -173,7 +173,16 @@ function Install-One {
         'choco'  { choco install $chosenPkg -y }
         'scoop'  { scoop install $chosenPkg }
     }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning ("  $chosenPm install of $chosenPkg returned exit code $LASTEXITCODE")
+        # Track failures so we can summarize at the end.
+        $script:InstallFailures += [pscustomobject]@{ Tool = $tool; Pm = $chosenPm; Pkg = $chosenPkg; ExitCode = $LASTEXITCODE }
+    }
 }
+
+# Track failures across the run so we can warn loudly at the end instead of
+# pretending success.
+$script:InstallFailures = @()
 
 # ---- Hack Nerd Font: prefer scoop bucket, fall back to direct download+register
 function Install-HackNerdFont {
@@ -195,7 +204,7 @@ function Install-HackNerdFont {
         return
     }
 
-    # Path 1: scoop with the nerd-fonts bucket — proper user-scope install.
+    # Path 1: scoop with the nerd-fonts bucket -- proper user-scope install.
     if (Get-Command scoop -ErrorAction SilentlyContinue) {
         if ($DryRun) {
             Write-Host "  would: scoop install nerd-fonts/Hack-NF"
@@ -284,6 +293,19 @@ Write-Host "            Use Windows Terminal (.\bootstrap.ps1 -MergeWindowsTermi
 Write-Host "            the rose-pine fragment) or WezTerm for now."
 
 Write-Host ""
+if ($script:InstallFailures.Count -gt 0) {
+    Write-Host "install-deps: completed with $($script:InstallFailures.Count) FAILED install(s):"
+    foreach ($f in $script:InstallFailures) {
+        Write-Host ("  FAIL  {0,-20} via {1,-8} pkg={2}  (exit {3})" -f $f.Tool, $f.Pm, $f.Pkg, $f.ExitCode) -ForegroundColor Red
+    }
+    Write-Host ""
+    Write-Host "Re-run install-deps.ps1 after addressing the failures, or"
+    Write-Host "install the listed packages manually."
+    if ($DryRun) { Write-Host "(dry run -- nothing was actually attempted)" }
+    Write-Host ""
+    Write-Host "Next: run .\bootstrap.ps1 to symlink configs into place."
+    exit 1
+}
 Write-Host "install-deps: done"
 if ($DryRun) { Write-Host "(dry run -- nothing was installed)" }
 Write-Host ""

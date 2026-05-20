@@ -26,6 +26,7 @@ DRY_RUN=0
 SKIP_DEPS=0
 SKIP_BOOTSTRAP=0
 SKIP_NVIM=0
+BEST_EFFORT=0
 for arg in "$@"; do
     case "$arg" in
         --all|-y)         ALL=1 ;;
@@ -33,6 +34,7 @@ for arg in "$@"; do
         --skip-deps)      SKIP_DEPS=1 ;;
         --skip-bootstrap) SKIP_BOOTSTRAP=1 ;;
         --skip-nvim)      SKIP_NVIM=1 ;;
+        --best-effort)    BEST_EFFORT=1 ;;
         -h|--help)        sed -n '2,18p' "$0"; exit 0 ;;
         *) echo "Unknown arg: $arg" >&2; exit 2 ;;
     esac
@@ -48,6 +50,13 @@ if [[ -n "${BASH_SOURCE[0]:-}" ]] && [[ -f "${BASH_SOURCE[0]:-}" ]]; then
 fi
 if [[ -z "$SCRIPT_DIR" ]] || [[ ! -f "$SCRIPT_DIR/bootstrap.sh" ]]; then
     DEST="${DOTFILES_DEST:-$DEFAULT_DEST}"
+    # DryRun honor: announce what we'd clone and exit BEFORE any git op.
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        echo "setup.sh (remote, dry-run): would clone $REPO_URL -> $DEST"
+        echo "                            then re-invoke ./setup.sh $* from there."
+        echo "(dry run -- no clone, no install, no writes performed)"
+        exit 0
+    fi
     if ! command -v git >/dev/null 2>&1; then
         echo "setup.sh: git is required to clone the repo. Install git first." >&2
         exit 1
@@ -119,14 +128,30 @@ fi
 
 # ---- Phase 3: install Neovim plugins -----------------------------------------
 # ---- Phase 4: install LSP servers + formatters via Mason ---------------------
+#
+# By default, Lazy + Mason failures are FATAL — they leave the user with a
+# bare nvim config and no LSP. Pass --best-effort to downgrade to warnings.
+run_or_fail() {
+    local label="$1"; shift
+    if "$@"; then return 0; fi
+    local rc=$?
+    if [[ "$BEST_EFFORT" -eq 1 ]]; then
+        echo "  WARN: $label exited $rc (continuing because --best-effort is set)"
+        return 0
+    fi
+    echo "  FAIL: $label exited $rc"
+    echo "        To continue past plugin/LSP failures, re-run with --best-effort."
+    exit "$rc"
+}
+
 if [[ "$SKIP_NVIM" -eq 0 ]] && [[ "$DRY_RUN" -eq 0 ]]; then
     if command -v nvim >/dev/null 2>&1; then
         phase "Phase 3/4: sync Neovim plugins (lazy.nvim)"
-        nvim --headless "+Lazy! sync" +qa || echo "  WARN: Lazy sync exited non-zero; check nvim --headless +Lazy +qa"
+        run_or_fail "Lazy sync" nvim --headless "+Lazy! sync" "+qa"
 
         phase "Phase 4/4: install LSP servers + formatters (Mason)"
         echo "  this can take 3-8 minutes on a fresh machine."
-        nvim --headless "+MasonToolsInstallSync" +qa || echo "  WARN: Mason install exited non-zero; run :Mason inside nvim to see what's missing"
+        run_or_fail "Mason install" nvim --headless "+MasonToolsInstallSync" "+qa"
     else
         echo
         echo "skipped: Phase 3-4 (nvim plugins) -- nvim not on PATH yet."

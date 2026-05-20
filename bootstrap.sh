@@ -89,11 +89,17 @@ link() {
             echo "  ok        $dst → $src"
             return 0
         fi
+        # Existing symlink points elsewhere — back up the symlink itself
+        # before replacing. We don't dereference (we want to preserve the
+        # user's prior choice, not its target).
+        local backup
+        backup="$(unique_backup "${dst}.bak.${TIMESTAMP}")"
         if [[ "$DRY_RUN" -eq 1 ]]; then
-            echo "  relink    $dst (was → $current)"
+            echo "  relink    $dst (was → $current; backup → $backup)"
         else
-            ln -sfn "$src" "$dst"
-            echo "  relinked  $dst → $src"
+            mv "$dst" "$backup"
+            ln -s "$src" "$dst"
+            echo "  relinked  $dst → $src  (prior symlink → $backup)"
         fi
         return 0
     fi
@@ -119,8 +125,59 @@ link() {
     fi
 }
 
-# ---- Universal links (mac + linux + wsl) -------------------------------------
+# ---- Self-link guard ---------------------------------------------------------
+# Refuse to run if the repo lives at the same path bootstrap would symlink to
+# itself. Without this, we'd back up the repo dir and replace it with a broken
+# symlink, corrupting the worktree.
 NVIM_DEST="${HOME}/.config/nvim"
+realpath_or_self() {
+    if command -v realpath >/dev/null 2>&1; then
+        realpath "$1" 2>/dev/null || echo "$1"
+    elif command -v readlink >/dev/null 2>&1 && readlink -f / >/dev/null 2>&1; then
+        # GNU readlink -f works on Linux but not on stock macOS (until 14+).
+        readlink -f "$1" 2>/dev/null || echo "$1"
+    else
+        # macOS fallback: physical pwd in the directory.
+        ( cd "$1" 2>/dev/null && pwd -P ) || echo "$1"
+    fi
+}
+REPO_NVIM="$(realpath_or_self "${REPO_ROOT}/nvim")"
+REPO_R="$(realpath_or_self "$REPO_ROOT")"
+# If the destination is already a symlink, bootstrap.sh's link() handles the
+# relink / no-op cases correctly; the self-link risk only exists when the
+# destination is a real directory or file. Compare physical paths only in
+# that case.
+SELF_LINK=0
+if [[ ! -L "$NVIM_DEST" ]] && [[ -e "$NVIM_DEST" ]]; then
+    DEST_R="$(realpath_or_self "$NVIM_DEST")"
+    # Two self-link scenarios:
+    #   A) Repo's nvim/ subdir IS the destination directory
+    #   B) The repo root IS the destination directory (clone -> ~/.config/nvim)
+    if [[ "$REPO_NVIM" == "$DEST_R" ]] || [[ "$REPO_R" == "$DEST_R" ]]; then
+        SELF_LINK=1
+    fi
+fi
+if [[ "$SELF_LINK" -eq 1 ]]; then
+    cat >&2 <<EOF
+bootstrap.sh: REFUSING to run.
+
+  Repo root:             $REPO_R
+  Repo nvim/ dir:        $REPO_NVIM
+  Symlink destination:   $NVIM_DEST
+
+  The symlink we would create would overlap your repo. Running
+  bootstrap would back up the repo and replace it with a symlink
+  to nothing.
+
+  Move the repo to a different location first, e.g.:
+      mv "$REPO_R" "$HOME/dotfiles"
+      cd "$HOME/dotfiles"
+      ./bootstrap.sh
+EOF
+    exit 1
+fi
+
+# ---- Universal links (mac + linux + wsl) -------------------------------------
 link "${REPO_ROOT}/nvim"                "${NVIM_DEST}"
 link "${REPO_ROOT}/starship/starship.toml" "${HOME}/.config/starship.toml"
 link "${REPO_ROOT}/tmux/tmux.conf"      "${HOME}/.tmux.conf"

@@ -22,7 +22,8 @@ param(
     [switch]$SkipDeps,
     [switch]$SkipBootstrap,
     [switch]$SkipNvim,
-    [switch]$MergeWindowsTerminal
+    [switch]$MergeWindowsTerminal,
+    [switch]$BestEffort
 )
 
 $ErrorActionPreference = 'Stop'
@@ -39,6 +40,13 @@ if ($PSCommandPath -and (Test-Path -LiteralPath $PSCommandPath)) {
 }
 if (-not $ScriptDir -or -not (Test-Path (Join-Path $ScriptDir 'bootstrap.ps1'))) {
     $dest = if ($env:DOTFILES_DEST) { $env:DOTFILES_DEST } else { $DefaultDest }
+    # DryRun honor: announce what we would clone and exit BEFORE any git op.
+    if ($DryRun) {
+        Write-Host "setup.ps1 (remote, dry-run): would clone $RepoUrl -> $dest"
+        Write-Host "                             then re-invoke .\setup.ps1 from there."
+        Write-Host "(dry run -- no clone, no install, no writes performed)"
+        exit 0
+    }
     if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
         Write-Error "setup.ps1: git is required to clone the repo. Install git first (e.g. winget install Git.Git)."
         exit 1
@@ -105,14 +113,36 @@ if (-not $SkipBootstrap) {
 }
 
 # ---- Phases 3 + 4: nvim sync -------------------------------------------------
+#
+# Lazy + Mason failures are FATAL by default. Pass -BestEffort to downgrade
+# them to warnings (useful for offline / proxy-restricted environments where
+# you accept a partial install and will run :Lazy / :Mason interactively).
+function Invoke-OrFail {
+    param([string]$Label, [scriptblock]$Block)
+    & $Block
+    $rc = $LASTEXITCODE
+    if ($rc -ne 0) {
+        if ($BestEffort) {
+            Write-Warning ("  $Label exited $rc (continuing because -BestEffort is set)")
+            return
+        }
+        # NOTE: ErrorActionPreference = Stop (set at the top of this file)
+        # makes Write-Error THROW before any line after it executes. Use
+        # Write-Host to print the failure context, then exit with the real rc.
+        Write-Host ("  FAIL: $Label exited $rc") -ForegroundColor Red
+        Write-Host  "        Re-run with -BestEffort to continue past plugin/LSP failures." -ForegroundColor Yellow
+        exit $rc
+    }
+}
+
 if (-not $SkipNvim -and -not $DryRun) {
     if (Get-Command nvim -ErrorAction SilentlyContinue) {
         Phase "Phase 3/4: sync Neovim plugins (lazy.nvim)"
-        & nvim --headless "+Lazy! sync" "+qa"
+        Invoke-OrFail "Lazy sync" { & nvim --headless "+Lazy! sync" "+qa" }
 
         Phase "Phase 4/4: install LSP servers + formatters (Mason)"
         Write-Host "  this can take 3-8 minutes on a fresh Windows machine."
-        & nvim --headless "+MasonToolsInstallSync" "+qa"
+        Invoke-OrFail "Mason install" { & nvim --headless "+MasonToolsInstallSync" "+qa" }
     } else {
         Write-Host ""
         Write-Host "skipped: Phase 3-4 (nvim plugins) -- nvim not on PATH yet."

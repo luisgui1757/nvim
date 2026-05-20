@@ -52,13 +52,16 @@ function New-SymLink {
                 Write-Step "ok       $Destination -> $Source"
                 return
             }
+            # Existing symlink points elsewhere -- back up the symlink itself
+            # before replacing so the prior user choice is not silently lost.
+            $backup = Get-UniqueBackupPath "$Destination.bak.$Timestamp"
             if ($DryRun) {
-                Write-Step "relink   $Destination (was -> $existing)"
+                Write-Step "relink   $Destination (was -> $existing; backup -> $backup)"
                 return
             }
-            Remove-Item -LiteralPath $Destination -Force
+            Move-Item -LiteralPath $Destination -Destination $backup -Force
             New-Item -ItemType SymbolicLink -Path $Destination -Target $Source | Out-Null
-            Write-Step "relinked $Destination -> $Source"
+            Write-Step "relinked $Destination -> $Source  (prior symlink -> $backup)"
             return
         }
 
@@ -75,7 +78,7 @@ function New-SymLink {
             Write-Host "  FAIL     could not back up: $Destination" -ForegroundColor Red
             Write-Host "           reason: $($_.Exception.Message)" -ForegroundColor Red
             if ($_.Exception.Message -match 'being used by another process') {
-                # Use single-quoted strings — no interpolation needed, and
+                # Use single-quoted strings -- no interpolation needed, and
                 # this dodges the backtick-escapes-the-closing-quote bug that
                 # made an earlier "...loaded the old `$PROFILE`" string
                 # silently swallow the rest of the file at parse time.
@@ -120,23 +123,55 @@ function Test-CanCreateSymlinks {
 Write-Host "bootstrap.ps1: repo=$RepoRoot dry-run=$DryRun"
 Write-Host
 
-# In dry-run mode, downgrade the symlink-privilege check to a warning so a
-# non-elevated user without Developer Mode can still preview the install.
-if (-not (Test-CanCreateSymlinks)) {
-    if ($DryRun) {
-        Write-Warning "Symlink creation not currently permitted; -DryRun will preview anyway. To actually install, enable Developer Mode or run elevated."
-    } else {
-        Write-Error @"
+# DryRun must not touch the filesystem. The symlink-creation probe writes
+# temp files, so skip it entirely in DryRun mode.
+if ($DryRun) {
+    Write-Host "  (DryRun: skipping symlink-privilege probe)"
+} elseif (-not (Test-CanCreateSymlinks)) {
+    Write-Error @"
 Cannot create symbolic links. Either:
   - Run this from an elevated PowerShell, OR
   - Enable Developer Mode: Settings -> Privacy & security -> For developers -> Developer Mode = On
+"@
+    exit 1
+}
+
+# ---- Self-link guard ---------------------------------------------------------
+# Refuse to run if the symlink we would create would overlap the repo. If the
+# destination is already a symlink, New-SymLink handles relink / no-op cases
+# correctly, so the self-link risk only exists when the destination is a real
+# directory or file.
+$nvimDest = Join-Path $env:LOCALAPPDATA 'nvim'
+$destItem = Get-Item -LiteralPath $nvimDest -Force -ErrorAction SilentlyContinue
+$destIsRealDir = $destItem -and ($destItem.PSIsContainer) -and ($destItem.LinkType -ne 'SymbolicLink')
+if ($destIsRealDir) {
+    $repoResolved     = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction SilentlyContinue).Path
+    $repoNvimResolved = (Resolve-Path -LiteralPath (Join-Path $RepoRoot 'nvim') -ErrorAction SilentlyContinue).Path
+    $destResolved     = (Resolve-Path -LiteralPath $nvimDest -ErrorAction SilentlyContinue).Path
+    $selfLink = $false
+    # Scenario A: the repo nvim subdir IS the destination dir
+    if ($repoNvimResolved -and $destResolved -and ($repoNvimResolved -eq $destResolved)) { $selfLink = $true }
+    # Scenario B: the repo root IS the destination dir (clone -> %LOCALAPPDATA%\nvim)
+    if ($repoResolved -and $destResolved -and ($repoResolved -eq $destResolved))       { $selfLink = $true }
+    if ($selfLink) {
+        Write-Error @"
+bootstrap.ps1: REFUSING to run.
+
+  Repo root:           $repoResolved
+  Repo nvim dir:       $repoNvimResolved
+  Symlink destination: $nvimDest
+
+  The symlink we would create would overlap your repo. Running
+  bootstrap would back up the repo and replace it with a symlink
+  to nothing.
+
+  Move the repo elsewhere first (e.g. `$env:USERPROFILE\dotfiles`) and re-run.
 "@
         exit 1
     }
 }
 
 # ---- Links -------------------------------------------------------------------
-$nvimDest = Join-Path $env:LOCALAPPDATA 'nvim'
 New-SymLink -Source (Join-Path $RepoRoot 'nvim')                       -Destination $nvimDest
 New-SymLink -Source (Join-Path $RepoRoot 'starship\starship.toml')     -Destination (Join-Path $env:USERPROFILE '.config\starship.toml')
 New-SymLink -Source (Join-Path $RepoRoot 'shells\powershell_profile.ps1') -Destination $PROFILE
@@ -155,14 +190,14 @@ if ($MergeWindowsTerminal) {
     } else {
         $fragmentPath = Join-Path $RepoRoot 'windows-terminal\settings.fragment.jsonc'
         # Strip start-of-line // comments WITHOUT a regex literal that contains
-        # both // and $ — PS 5.1 has been observed mis-tokenizing that pattern
+        # both // and $ -- PS 5.1 has been observed mis-tokenizing that pattern
         # and reporting "missing terminator" far downstream from the real issue.
         $fragmentLines = Get-Content -LiteralPath $fragmentPath | Where-Object {
             $_ -notmatch "^\s*//"
         }
         $fragment = ($fragmentLines -join "`n") | ConvertFrom-Json
 
-        $backup = "$wtSettings.bak.$Timestamp"
+        $backup = Get-UniqueBackupPath "$wtSettings.bak.$Timestamp"
         if ($DryRun) {
             Write-Step "merge    $wtSettings (backup -> $backup)"
         } else {

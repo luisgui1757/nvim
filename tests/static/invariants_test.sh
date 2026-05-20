@@ -87,6 +87,7 @@ ps1_files=(
 ps1_non_ascii=$(LC_ALL=C grep -lP "[^\x00-\x7F]" "${ps1_files[@]}" 2>/dev/null || true)
 if [[ -n "$ps1_non_ascii" ]]; then
     echo "FAIL: non-ASCII chars in .ps1 file(s) (PS 5.1 will mis-parse):"
+    # shellcheck disable=SC2001  # sed is clearer than ${//} for line-prefixing
     echo "$ps1_non_ascii" | sed 's/^/  /'
     fail=1
 else
@@ -102,6 +103,7 @@ fi
 ps1_comment_apos=$(grep -nE "^\s*#.*'" "${ps1_files[@]}" 2>/dev/null || true)
 if [[ -n "$ps1_comment_apos" ]]; then
     echo "FAIL: apostrophe in a .ps1 comment (PS 5.1 may mis-tokenize):"
+    # shellcheck disable=SC2001  # sed is clearer than ${//} for line-prefixing
     echo "$ps1_comment_apos" | sed 's/^/  /'
     fail=1
 else

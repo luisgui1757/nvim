@@ -32,6 +32,35 @@ vim.opt.listchars = { tab = "▸ ", trail = "·", nbsp = "␣" }
 -- mac: works via pbcopy; wsl: needs win32yank.exe; linux: needs xclip/wl-copy.
 vim.opt.clipboard = "unnamedplus"
 
+-- Runtime sanity check: if nothing in the clipboard-provider chain is on
+-- PATH, yanks will silently fail to reach the system clipboard. Warn once
+-- on a delayed timer so the message lands AFTER the colorscheme + lualine
+-- load (otherwise it gets buried in startup output).
+vim.api.nvim_create_autocmd("VimEnter", {
+	once = true,
+	callback = function()
+		vim.defer_fn(function()
+			-- Escape hatch: a user-defined vim.g.clipboard provider overrides
+			-- nvim's discovery chain. Don't warn in that case.
+			if vim.g.clipboard ~= nil then return end
+			local providers = { "pbcopy", "wl-copy", "xclip", "xsel", "win32yank.exe" }
+			for _, p in ipairs(providers) do
+				if vim.fn.executable(p) == 1 then return end
+			end
+			vim.notify(
+				"clipboard: no provider on PATH (pbcopy / wl-copy / xclip / xsel / win32yank.exe).\n"
+					.. "Yanks will not reach the system clipboard. Install one for your OS:\n"
+					.. "  macOS:        pre-installed (pbcopy)\n"
+					.. "  Linux X11:    sudo apt install xclip\n"
+					.. "  Linux Wayland: sudo apt install wl-clipboard\n"
+					.. "  WSL:          install win32yank on the Windows side (scoop install win32yank)\n"
+					.. "(Set vim.g.clipboard = {...} to define a custom provider and silence this warning.)",
+				vim.log.levels.WARN
+			)
+		end, 500)
+	end,
+})
+
 -- Disable arrow keys
 for _, mode in ipairs({ "n", "i" }) do
 	for _, key in ipairs({ "<Up>", "<Down>", "<Left>", "<Right>" }) do

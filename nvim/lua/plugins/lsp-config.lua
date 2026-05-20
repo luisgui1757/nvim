@@ -162,13 +162,21 @@ return {
 
 			-- Race fix: if a buffer opened *before* mason-tool-installer
 			-- finished installing its server, those buffers won't have an
-			-- LSP client. Restart matching clients once Mason completes.
+			-- LSP client. Re-fire the LspAttach codepath for each loaded
+			-- buffer by issuing :edit INSIDE THAT BUFFER via nvim_buf_call
+			-- (the previous version only re-edited the current buffer for
+			-- every iteration, leaving background buffers stranded).
 			vim.api.nvim_create_autocmd("User", {
 				pattern = "MasonToolsUpdateCompleted",
 				callback = function()
 					for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-						if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].buftype == "" then
-							pcall(vim.cmd, "edit") -- re-attach LSP for this buffer
+						if vim.api.nvim_buf_is_loaded(buf)
+							and vim.bo[buf].buftype == ""
+							and vim.api.nvim_buf_get_name(buf) ~= ""
+						then
+							pcall(vim.api.nvim_buf_call, buf, function()
+								vim.cmd("edit")
+							end)
 						end
 					end
 				end,
