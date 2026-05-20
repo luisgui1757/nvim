@@ -18,8 +18,12 @@ TMP_CONFIG="$(mktemp -d)/starship.toml"
 trap 'rm -rf "$TMP_HOME" "$(dirname "$TMP_CONFIG")"' EXIT
 
 # Copy the toml into a scratch dir so we don't dirty the repo (CI lint depends
-# on a clean worktree).
+# on a clean worktree). Force its mtime well into the past so the cache (which
+# the first run creates with mtime = now) is reliably newer -- on Linux's
+# nanosecond-precision filesystems the cp + immediate-create race otherwise
+# leaves the toml very slightly newer than the cache.
 cp "$REPO_ROOT/starship/starship.toml" "$TMP_CONFIG"
+touch -t 202001010000 "$TMP_CONFIG"
 
 run_shell() {
     HOME="$TMP_HOME" STARSHIP_CONFIG="$TMP_CONFIG" \

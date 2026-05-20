@@ -297,7 +297,9 @@ install_nerd_font() {
         rm -rf "$tmp"; return
     fi
     rm -rf "$tmp"
-    have fc-cache && fc-cache -f "$(dirname "$font_dir")" >/dev/null 2>&1 || true
+    if have fc-cache; then
+        fc-cache -f "$(dirname "$font_dir")" >/dev/null 2>&1 || true
+    fi
     printf "  installed %-26s -> %s\n" "Hack Nerd Font" "$font_dir"
 }
 

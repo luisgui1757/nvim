@@ -12,6 +12,14 @@ Describe "PowerShell profile" {
     }
 
     It "dot-sources cleanly even when starship is not on PATH" {
+        # Resolve the pwsh full path BEFORE modifying $env:PATH -- once the
+        # sandbox replaces PATH, the short name pwsh cannot be found.
+        $pwshExe = (Get-Command pwsh -ErrorAction SilentlyContinue).Source
+        if (-not $pwshExe) {
+            $pwshExe = (Get-Command pwsh.exe -ErrorAction SilentlyContinue).Source
+        }
+        $pwshExe | Should -Not -BeNullOrEmpty
+
         # Use a sandbox PATH that does not contain starship.
         $sandbox = Join-Path ([System.IO.Path]::GetTempPath()) ("ps-sandbox-" + [System.Guid]::NewGuid())
         New-Item -ItemType Directory -Force -Path $sandbox | Out-Null
@@ -19,7 +27,7 @@ Describe "PowerShell profile" {
         try {
             $env:PATH = $sandbox
             $rc = 0
-            pwsh -NoProfile -Command "& { . `"$($script:Profile.Replace('"','`"'))`"; exit 0 }"
+            & $pwshExe -NoProfile -Command "& { . `"$($script:Profile.Replace('"','`"'))`"; exit 0 }"
             $rc = $LASTEXITCODE
             $rc | Should -Be 0
         } finally {
