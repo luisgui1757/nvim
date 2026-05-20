@@ -35,7 +35,7 @@ $script:CacheDir = if ($env:LOCALAPPDATA) {
     [System.IO.Path]::GetTempPath()
 }
 if (-not (Test-Path -LiteralPath $script:CacheDir)) {
-    try { New-Item -ItemType Directory -Force -Path $script:CacheDir | Out-Null } catch { }
+    try { New-Item -ItemType Directory -Force -Path $script:CacheDir | Out-Null } catch { Write-Verbose $_.Exception.Message }
 }
 $script:StarshipInitPath = Join-Path $script:CacheDir 'starship.ps1'
 
@@ -96,10 +96,10 @@ if (Get-Module -ListAvailable PSReadLine) {
     Import-Module PSReadLine -ErrorAction SilentlyContinue
 
     # Options that work on every PSReadLine version since 2.0:
-    try { Set-PSReadLineOption -EditMode Windows -ErrorAction Stop } catch { }
-    try { Set-PSReadLineOption -BellStyle None -ErrorAction Stop } catch { }
-    try { Set-PSReadLineOption -HistoryNoDuplicates -ErrorAction Stop } catch { }
-    try { Set-PSReadLineOption -HistorySearchCursorMovesToEnd -ErrorAction Stop } catch { }
+    try { Set-PSReadLineOption -EditMode Windows -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
+    try { Set-PSReadLineOption -BellStyle None -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
+    try { Set-PSReadLineOption -HistoryNoDuplicates -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
+    try { Set-PSReadLineOption -HistorySearchCursorMovesToEnd -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
 
     # PredictionSource + PredictionViewStyle landed in PSReadLine 2.1 / 2.2.
     # Older PS 5.1 installs may ship PSReadLine 2.0 which rejects these args.
@@ -108,9 +108,9 @@ if (Get-Module -ListAvailable PSReadLine) {
         try {
             Set-PSReadLineOption -PredictionSource HistoryAndPlugin -ErrorAction Stop
             Set-PSReadLineOption -PredictionViewStyle ListView -ErrorAction Stop
-        } catch { }
+        } catch { Write-Verbose $_.Exception.Message }
     } elseif ($psrl -and $psrl.Version -ge [Version]'2.1.0') {
-        try { Set-PSReadLineOption -PredictionSource History -ErrorAction Stop } catch { }
+        try { Set-PSReadLineOption -PredictionSource History -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
     }
 
     try {
@@ -129,9 +129,9 @@ if (Get-Module -ListAvailable PSReadLine) {
             ContinuationPrompt = '#6e6a86'
             Default            = '#e0def4'
         }
-    } catch { }
+    } catch { Write-Verbose $_.Exception.Message }
 
-    try { Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete -ErrorAction Stop } catch { }
-    try { Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward -ErrorAction Stop } catch { }
-    try { Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward -ErrorAction Stop } catch { }
+    try { Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
+    try { Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
+    try { Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
 }

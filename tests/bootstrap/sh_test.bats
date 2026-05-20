@@ -65,13 +65,23 @@ run_bootstrap() {
     mkdir -p "$FAKE_HOME/.config"
     ln -s "$REPO_ROOT/nvim" "$FAKE_HOME/.config/nvim"
 
-    pre_inode=$(stat -f %i "$FAKE_HOME/.config/nvim" 2>/dev/null || stat -c %i "$FAKE_HOME/.config/nvim")
+    pre_target=$(readlink "$FAKE_HOME/.config/nvim")
 
     run run_bootstrap
     [ "$status" -eq 0 ]
 
-    post_inode=$(stat -f %i "$FAKE_HOME/.config/nvim" 2>/dev/null || stat -c %i "$FAKE_HOME/.config/nvim")
-    [ "$pre_inode" = "$post_inode" ]   # already-correct link not disturbed
+    # Semantic check: existing CORRECT link still points where it did
+    # (target preserved). Avoid inode comparison -- atomic-rename
+    # implementations on some Linux filesystems can change inodes even
+    # when nothing semantically changed.
+    [ -L "$FAKE_HOME/.config/nvim" ]
+    post_target=$(readlink "$FAKE_HOME/.config/nvim")
+    [ "$pre_target" = "$post_target" ]
+
+    # And no stray .bak.* file was produced for an already-correct link.
+    run find "$FAKE_HOME/.config" -maxdepth 1 -name "nvim.bak.*"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 
     [ -L "$FAKE_HOME/.tmux.conf" ]      # missing link now in place
 }
