@@ -267,7 +267,6 @@
       }
     }
   },
-  "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark-ansi",
   "remoteControlAtStartup": true,
