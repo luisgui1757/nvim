@@ -1,8 +1,12 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
-# Shell scripts MUST stay LF even on Windows checkouts (core.autocrlf=true),
-# otherwise WSL / Git-Bash fail with `bad interpreter: /usr/bin/env bash^M`.
+# Force LF on every text file regardless of platform / core.autocrlf, so a
+# Windows checkout never CRLF-corrupts shell scripts (which would break WSL /
+# Git-Bash with `bad interpreter: /usr/bin/env bash^M`). This matches
+# .editorconfig (end_of_line = lf) — including .ps1, which PowerShell / pwsh
+# run fine with LF. Do NOT add eol=crlf overrides; they conflict with
+# .editorconfig and the editorconfig-checker CI step.
 *.sh    text eol=lf
 *.bash  text eol=lf
 *.zsh   text eol=lf
@@ -10,8 +14,4 @@ zshrc   text eol=lf
 *.toml  text eol=lf
 *.lua   text eol=lf
 *.conf  text eol=lf
-
-# PowerShell + Windows batch want CRLF.
-*.ps1   text eol=crlf
-*.bat   text eol=crlf
-*.cmd   text eol=crlf
+*.ps1   text eol=lf
