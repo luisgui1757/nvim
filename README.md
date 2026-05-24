@@ -130,9 +130,8 @@ when their dependency tool is missing on the current machine.
   it. Only the user-owned keys live in `settings.fragment.jsonc`; the install
   script merges them in.
 
-See `/Users/user/.claude/plans/this-directory-has-my-idempotent-seahorse.md`
-for the full design notes that drove the restructure, and `CLAUDE.md` for the
-operational guide (invariants, common workflows, conventions).
+See `CLAUDE.md` for the operational guide (invariants, common workflows,
+conventions).
 
 ## Daily workflows
 

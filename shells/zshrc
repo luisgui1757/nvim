@@ -76,3 +76,9 @@ fi
 # breaks every Alt-X keybinding (including Alt-h/j/k/l set in nvim's
 # vim-options.lua). If you want a single keystroke to clear the line, ^U
 # (kill-whole-line) is already the readline default.
+
+# ---- Machine-local overrides (NOT tracked) -----------------------------------
+# Put anything user/machine/employer-specific here so it never lands in this
+# public repo: secrets, work paths, NOTES_VAULT, $PATH tweaks, etc.
+# Example: export NOTES_VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/my-vault"
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
