@@ -176,6 +176,14 @@ New-SymLink -Source (Join-Path $RepoRoot 'nvim')                       -Destinat
 New-SymLink -Source (Join-Path $RepoRoot 'starship\starship.toml')     -Destination (Join-Path $env:USERPROFILE '.config\starship.toml')
 New-SymLink -Source (Join-Path $RepoRoot 'shells\powershell_profile.ps1') -Destination $PROFILE
 
+# Claude Code settings (repo root claude/, not under nvim/). New-SymLink
+# creates %USERPROFILE%\.claude\ if absent and backs up any prior file/link.
+# Note: statusline-command.sh is a bash script -- it only runs under
+# Git-Bash / WSL on Windows; settings.json itself is the portable part.
+$claudeDir = Join-Path $env:USERPROFILE '.claude'
+New-SymLink -Source (Join-Path $RepoRoot 'claude\settings.json')         -Destination (Join-Path $claudeDir 'settings.json')
+New-SymLink -Source (Join-Path $RepoRoot 'claude\statusline-command.sh') -Destination (Join-Path $claudeDir 'statusline-command.sh')
+
 # Optional: WSL Ubuntu access -- symlinks inside WSL handled by bootstrap.sh.
 
 # ---- Optional WT fragment merge ----------------------------------------------

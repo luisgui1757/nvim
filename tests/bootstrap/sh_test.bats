@@ -27,6 +27,18 @@ run_bootstrap() {
     [ -L "$FAKE_HOME/.zshrc" ]
 }
 
+@test "fresh install links Claude Code settings from repo-root claude/" {
+    run run_bootstrap
+    [ "$status" -eq 0 ]
+    # Regression guard: the installer must link claude/ (repo root, NOT nvim/claude).
+    # Previously bootstrap silently skipped Claude despite the docs promising sync,
+    # and a stale ~/.claude link dead-ended at ~/.config/nvim/claude/.
+    [ -L "$FAKE_HOME/.claude/settings.json" ]
+    [ "$(readlink "$FAKE_HOME/.claude/settings.json")" = "$REPO_ROOT/claude/settings.json" ]
+    [ -L "$FAKE_HOME/.claude/statusline-command.sh" ]
+    [ "$(readlink "$FAKE_HOME/.claude/statusline-command.sh")" = "$REPO_ROOT/claude/statusline-command.sh" ]
+}
+
 @test "re-running is a no-op (idempotent)" {
     run run_bootstrap
     [ "$status" -eq 0 ]

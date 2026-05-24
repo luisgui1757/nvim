@@ -182,6 +182,10 @@ link "${REPO_ROOT}/nvim"                "${NVIM_DEST}"
 link "${REPO_ROOT}/starship/starship.toml" "${HOME}/.config/starship.toml"
 link "${REPO_ROOT}/tmux/tmux.conf"      "${HOME}/.tmux.conf"
 link "${REPO_ROOT}/shells/zshrc"        "${HOME}/.zshrc"
+# Claude Code settings live at the repo root under claude/ (NOT under nvim/).
+# link() creates ~/.claude/ if absent and backs up any prior file/symlink.
+link "${REPO_ROOT}/claude/settings.json"         "${HOME}/.claude/settings.json"
+link "${REPO_ROOT}/claude/statusline-command.sh" "${HOME}/.claude/statusline-command.sh"
 
 # ---- OS-specific links -------------------------------------------------------
 case "$OS" in

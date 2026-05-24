@@ -9,9 +9,20 @@ script works, read this too.
 Cross-platform dotfiles: Neovim (lazy.nvim), Starship, Ghostty, Windows
 Terminal, tmux, zshrc, PowerShell profile, Claude Code settings. Single source
 of truth — `bootstrap.sh` (macOS / Linux / WSL) and `bootstrap.ps1` (Windows)
-symlink everything into OS-appropriate locations. The repo itself should live
-at `~/dotfiles/` (NOT at `~/.config/nvim/` — the installer creates that as a
-symlink **pointing into** the repo).
+symlink everything into OS-appropriate locations. The bootstrap scripts are
+**location-independent** (they resolve `$REPO_ROOT` / `$RepoRoot` from their own
+path), so the repo can live anywhere — `~/dotfiles/`, `~/Documents/dotfiles/`,
+etc. The remote-clone default in `setup.{sh,ps1}` is `~/dotfiles/`, but an
+in-place clone elsewhere works too. Do NOT put the repo at `~/.config/nvim/` —
+the installer creates that path as a symlink **pointing into** the repo, so a
+repo there would self-overlap (the self-link guard refuses this).
+
+Claude Code settings live under `claude/` at the **repo root** — NOT under
+`nvim/claude/`. `~/.claude/settings.json` and `~/.claude/statusline-command.sh`
+symlink to `claude/settings.json` and `claude/statusline-command.sh`. (A stale
+pre-restructure layout routed `~/.claude/settings.json` through
+`~/.config/nvim/claude/` — that indirection is deprecated; bootstrap now links
+`claude/` directly.)
 
 ## Layout at a glance
 
