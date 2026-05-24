@@ -42,8 +42,8 @@ if ! tmux -L "$sock_name" list-keys -T prefix >/dev/null 2>&1; then
     echo "FAIL: tmux list-keys failed"; exit 1
 fi
 prefix=$(tmux -L "$sock_name" display-message -p "#{prefix}")
-if [[ "$prefix" != "C-Space" ]]; then
-    echo "FAIL: prefix = '$prefix' (want 'C-Space')"
+if [[ "$prefix" != "C-b" ]]; then
+    echo "FAIL: prefix = '$prefix' (want 'C-b')"
     exit 1
 fi
 echo "  prefix = $prefix"
