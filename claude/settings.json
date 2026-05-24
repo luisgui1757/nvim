@@ -228,7 +228,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bash /Users/user/.claude/statusline-command.sh"
+    "command": "bash \"$HOME/.claude/statusline-command.sh\""
   },
   "enabledPlugins": {
     "impeccable@impeccable": true,
