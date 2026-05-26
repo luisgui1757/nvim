@@ -265,6 +265,10 @@ seams. Unset in normal runs, so it's skipped.
   older distro builds. The guard is load-bearing: `tests/shell/zsh_startup_test.sh`
   sources zshrc with no fzf installed and expects exit 0, so an unguarded
   `source <(fzf --zsh)` would break it. Installed by default by `install-deps.sh`.
+- **starship `[directory]` shows the FULL path** (`truncation_length = 0`,
+  `truncate_to_repo = false`) — not starship's default of 3 folders collapsed to
+  the git-repo root. Intentional; raise `truncation_length` / flip
+  `truncate_to_repo` to shorten. Guarded by `tests/starship/directory_test.sh`.
 
 ## When you're about to make a change
 

@@ -34,7 +34,12 @@ iris = '#c4a7e7'
 [directory]
 format = "[](fg:overlay)[ $path ]($style)[](fg:overlay) "
 style = "bg:overlay fg:pine"
-truncation_length = 3
+# Show the FULL current path. truncation_length = 0 disables the "keep only the
+# last N folders" limit; truncate_to_repo = false stops collapsing the path to
+# the git-repo root. Home still contracts to ~ (home_symbol). To shorten again,
+# raise truncation_length (e.g. 3) and/or set truncate_to_repo = true.
+truncation_length = 0
+truncate_to_repo = false
 truncation_symbol = "…/"
 
 [directory.substitutions]
