@@ -199,6 +199,34 @@ save only**. The next plain `:w` formats normally. Implemented in
   `.\bootstrap.ps1 -MergeWindowsTerminal` to merge the user-owned keys in;
   it backs up the pre-merge `settings.json` first.
 
+## Login shell: zsh adoption (install-deps.sh)
+
+Installing the zsh *package* does NOT make zsh your login shell — that takes a
+`chsh`. `install-deps.sh` does it in the "terminal multiplexer + shell" section
+(`set_default_shell_zsh`); without it, Linux keeps logging the account into bash
+and tmux / new terminals never source the symlinked `~/.zshrc` (this is the
+"tmux shows bash" symptom). The step is:
+
+- **idempotent** — no-op when the login shell is already a *zsh* (compared by
+  basename, so macOS's `/bin/zsh`, a distro `/usr/bin/zsh`, and a brew zsh all
+  count as done; macOS therefore never churns);
+- **consent-gated** — prompts before changing (auto-yes under `--all`);
+- **dry-run-safe** — prints a `would:` line and mutates nothing under `--dry-run`
+  (this is why the CI `--dry-run --all` dogfood stays green);
+- it registers zsh in `/etc/shells` first (chsh refuses otherwise) and runs chsh
+  as root / via sudo / via plain PAM, whichever is available. Takes effect on the
+  next login.
+
+It lives in `install-deps.sh`, NOT `bootstrap.sh` (which stays pure-symlink), and
+NOT `tmux.conf` (a tmux-only `default-command` would paper over the symptom while
+bare TTYs and SSH sessions stayed bash).
+
+**Test seam — leave it:** the line `if [[ -n "${INSTALL_DEPS_SOURCE_ONLY:-}" ]];
+then return …` near the middle of `install-deps.sh` exists ONLY so
+`tests/shell/default_shell_test.sh` can `source` the function defs (without
+running any installs) and exercise the chsh decision logic against stubbed
+seams. Unset in normal runs, so it's skipped.
+
 ## Things that look weird but are intentional
 
 - **Mouse is disabled in nvim** (`vim.opt.mouse = ""`). User preference;

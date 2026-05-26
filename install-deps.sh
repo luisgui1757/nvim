@@ -112,6 +112,116 @@ maybe_install_brew() {
     return 1
 }
 
+# ---- Login shell: adopt zsh (chsh) -------------------------------------------
+# Installing the zsh *package* only drops a binary on disk — it does NOT make
+# zsh your login shell. Until /etc/passwd is updated, bare TTYs, SSH sessions,
+# and every tmux pane keep launching whatever the account's shell is (bash on
+# most Linux), so the symlinked ~/.zshrc never gets sourced. macOS already
+# defaults to zsh, so this no-ops there. Idempotent, consent-gated, dry-run-safe.
+zsh_bin() { command -v zsh 2>/dev/null; }
+
+# Read the account's CURRENT login shell from the authoritative source per OS
+# (NOT $SHELL, which is stale within a session after a chsh). Always exits 0.
+current_login_shell() {
+    local user shell=""
+    user="$(id -un 2>/dev/null || echo "${USER:-}")"
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        shell="$(dscl . -read "/Users/$user" UserShell 2>/dev/null | awk '{print $2}')" || true
+    elif have getent; then
+        shell="$(getent passwd "$user" 2>/dev/null | cut -d: -f7)" || true
+    elif [[ -r /etc/passwd ]]; then
+        shell="$(awk -F: -v u="$user" '$1==u{print $7; exit}' /etc/passwd 2>/dev/null)" || true
+    fi
+    [[ -n "$shell" ]] || shell="${SHELL:-}"
+    printf '%s' "$shell"
+}
+
+# chsh refuses a shell that isn't listed in /etc/shells. Register it (root only)
+# when missing; return non-zero if we can't, so the caller skips chsh cleanly.
+ensure_in_etc_shells() {
+    local shell="$1" uid
+    [[ -r /etc/shells ]] || return 0   # no file -> chsh may still proceed
+    if grep -qxF "$shell" /etc/shells; then return 0; fi
+    echo "  note      $shell not in /etc/shells; registering it (chsh needs this)"
+    uid="$(id -u 2>/dev/null || echo 1000)"
+    if [[ "$uid" -eq 0 ]]; then
+        printf '%s\n' "$shell" >> /etc/shells
+    elif have sudo; then
+        printf '%s\n' "$shell" | sudo tee -a /etc/shells >/dev/null
+    else
+        echo "  manual    add it first:  echo '$shell' | sudo tee -a /etc/shells"
+        return 1
+    fi
+}
+
+# Run chsh by the least-privileged route that works: as root directly, via
+# sudo (reuses cached creds, non-interactive-friendly), or plain chsh (PAM
+# prompts for the user's own password) as a last resort.
+set_login_shell() {
+    local shell="$1" user="${2:-}" uid
+    [[ -n "$user" ]] || user="$(id -un)"
+    uid="$(id -u 2>/dev/null || echo 1000)"
+    if [[ "$uid" -eq 0 ]]; then
+        chsh -s "$shell" "$user"
+    elif have sudo; then
+        sudo chsh -s "$shell" "$user"
+    else
+        chsh -s "$shell"
+    fi
+}
+
+set_default_shell_zsh() {
+    if ! have zsh; then
+        printf "  skipped   %-26s zsh not installed; login shell unchanged\n" "default shell"
+        return 0
+    fi
+    local zsh_path current
+    zsh_path="$(zsh_bin)"
+    current="$(current_login_shell 2>/dev/null || true)"
+
+    # Already a zsh? (covers macOS's default + idempotent re-runs). Compare by
+    # basename so /bin/zsh, /usr/bin/zsh, and a brew zsh all count as "done".
+    if [[ "${current##*/}" == "zsh" ]]; then
+        printf "  ok        %-26s already %s\n" "default shell" "${current:-zsh}"
+        return 0
+    fi
+
+    if ! ask "Make zsh your default login shell (chsh)? current: ${current:-unknown}"; then
+        printf "  skipped   %-26s kept %s\n" "default shell" "${current:-current shell}"
+        echo "            (~/.zshrc is symlinked, but tmux / new terminals keep"
+        echo "             launching ${current##*/} until the login shell changes)"
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        echo "  would: register $zsh_path in /etc/shells if needed, then chsh -s $zsh_path"
+        return 0
+    fi
+
+    if ! ensure_in_etc_shells "$zsh_path"; then
+        echo "  WARN: could not register $zsh_path in /etc/shells; skipping chsh"
+        return 0
+    fi
+
+    if set_login_shell "$zsh_path"; then
+        printf "  changed   %-26s login shell -> %s\n" "default shell" "$zsh_path"
+        echo "            log out and back in for it to take effect (tmux started"
+        echo "            after re-login then launches zsh, not bash)"
+    else
+        echo "  WARN: chsh failed; login shell unchanged"
+        echo "        manual:  chsh -s '$zsh_path'"
+    fi
+    return 0
+}
+
+# Test seam: `INSTALL_DEPS_SOURCE_ONLY=1 source install-deps.sh` defines the
+# functions above (so tests/shell/default_shell_test.sh can exercise the
+# login-shell decision logic) WITHOUT running any package installs.
+if [[ -n "${INSTALL_DEPS_SOURCE_ONLY:-}" ]]; then
+    # shellcheck disable=SC2317  # the exit is reached only when executed, not sourced
+    return 0 2>/dev/null || exit 0
+fi
+
 PM="$(detect_pm)"
 OS_LABEL="$(uname -s)"
 if is_wsl; then OS_LABEL="WSL ($OS_LABEL)"; fi
@@ -369,6 +479,7 @@ fi
 section "terminal multiplexer + shell"
 install tmux
 install zsh
+set_default_shell_zsh   # make zsh the login shell so tmux/terminals launch it
 
 section "terminals (optional)"
 if [[ "$(uname -s)" == "Darwin" ]] && [[ "$PM" == "brew" ]]; then

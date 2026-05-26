@@ -72,6 +72,12 @@ nvim --headless "+Lazy! sync" "+qa"
 nvim --headless "+MasonToolsInstallSync" "+qa"
 ```
 
+Phase 1 (`install-deps.sh`) also offers to make **zsh your login shell**
+(`chsh`) — installing the package alone doesn't, so without this step tmux and
+new terminals on Linux keep launching bash and never source the symlinked
+`~/.zshrc`. It's consent-gated (auto-yes under `--all`), idempotent, and
+no-ops on macOS (already zsh). The change takes effect after the next login.
+
 Every script is idempotent — re-running is a no-op when everything is
 already in place. Pre-existing non-symlink targets are backed up to
 `<target>.bak.<timestamp>` (collision-proof: `.1`, `.2`, … if reused).
@@ -186,6 +192,7 @@ make test                       # verify the new state
 | Clipboard not crossing host on WSL | `win32yank.exe` not on PATH | install win32yank via scoop on Windows side, ensure WSL PATH picks it up |
 | Starship prompt slow | a disabled language got re-enabled | check `starship/starship.toml` — only `c, go, nodejs, rust, python, conda` should be enabled |
 | `Alt-h/j/k/l` window nav doesn't work in terminal | something rebinds bare Esc in the shell | `bindkey | grep '^"\^\['` in zsh — should NOT show `kill-whole-line` |
+| tmux (or any new terminal) launches **bash on Linux**, not zsh | the login shell was never changed — `~/.zshrc` is symlinked but the account still logs into bash | re-run `./install-deps.sh` and accept "Make zsh your default login shell?", or `chsh -s "$(command -v zsh)"` then log out/in. macOS already defaults to zsh |
 | Ghostty doesn't load the config | wrong path | the install path is `~/Library/Application Support/com.mitchellh.ghostty/config` on macOS, `~/.config/ghostty/config` on Linux. `bootstrap.sh` handles this |
 | Windows Terminal lost a profile after merge | WT auto-rewrites — pre-merge backup is at `<settings.json>.bak.<timestamp>` | restore the profile list from the backup |
 | `bootstrap.ps1` errors "cannot create symbolic links" | Developer Mode off and not elevated | enable Developer Mode (Settings → Privacy & security → For developers) OR run from an elevated PowerShell |
