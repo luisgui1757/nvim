@@ -72,6 +72,26 @@ if command -v starship >/dev/null 2>&1; then
   unset _starship_init _starship_toml
 fi
 
+# ---- fzf (fuzzy finder): Ctrl-R history, Ctrl-T files, Alt-C cd --------------
+# Complements zsh-autosuggestions (inline ghosting) with an INTERACTIVE fuzzy
+# picker — different job, not a replacement. Quietly skips when fzf is absent.
+# Modern fzf (>=0.48) prints its own zsh integration via `fzf --zsh`; older
+# distro builds ship key-bindings/completion files under a share dir instead.
+# Guarded with `command -v` so a missing fzf never changes zshrc's exit status.
+if command -v fzf >/dev/null 2>&1; then
+  if fzf --zsh >/dev/null 2>&1; then
+    source <(fzf --zsh)
+  else
+    for _fzf_dir in \
+        "${HOMEBREW_PREFIX:-/opt/homebrew}/opt/fzf/shell" \
+        /usr/share/fzf /usr/share/fzf/shell /usr/share/doc/fzf/examples; do
+      [[ -r "$_fzf_dir/key-bindings.zsh" ]] && source "$_fzf_dir/key-bindings.zsh"
+      [[ -r "$_fzf_dir/completion.zsh"   ]] && source "$_fzf_dir/completion.zsh"
+    done
+    unset _fzf_dir
+  fi
+fi
+
 # Intentionally NOT rebinding Esc — it shadows the entire Meta prefix and
 # breaks every Alt-X keybinding (including Alt-h/j/k/l set in nvim's
 # vim-options.lua). If you want a single keystroke to clear the line, ^U

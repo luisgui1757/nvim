@@ -133,6 +133,11 @@ when their dependency tool is missing on the current machine.
   prompt.
 - **Zsh starship init is precompiled** (mirroring the PowerShell profile
   approach) — re-generated only when `starship.toml` is newer than the cache.
+- **fzf wired into zsh by default** — `Ctrl-R` fuzzy history, `Ctrl-T` file
+  picker, `Alt-C` fuzzy cd. It *complements* zsh-autosuggestions (inline
+  ghosting), it doesn't replace it. Guarded by `command -v fzf` so a machine
+  without it still starts cleanly; uses `fzf --zsh` with a share-dir fallback
+  for older distro builds.
 - **No `bindkey '\e' kill-whole-line`** — that shadowed the entire Meta
   prefix and silently broke Alt-h/j/k/l window nav in nvim.
 - **Windows Terminal settings.json is NOT symlinked** because WT auto-rewrites
@@ -197,7 +202,7 @@ make test                       # verify the new state
 | `Alt-h/j/k/l` window nav doesn't work in terminal | something rebinds bare Esc in the shell | `bindkey | grep '^"\^\['` in zsh — should NOT show `kill-whole-line` |
 | tmux (or any new terminal) launches **bash on Linux**, not zsh | the login shell was never changed — `~/.zshrc` is symlinked but the account still logs into bash | re-run `./install-deps.sh` and accept "Make zsh your default login shell?", or `chsh -s "$(command -v zsh)"` then log out/in. macOS already defaults to zsh |
 | `chsh` fails with `user '<name>' does not exist in /etc/passwd` | you log in via a **domain** account (AD/LDAP/SSSD) that isn't in local `/etc/passwd`, so `chsh` can't touch it | re-run `./install-deps.sh` — it detects this and offers to re-exec interactive bash into zsh via `~/.bashrc` instead. The "proper" fix is admin-side: set the directory `loginShell` / SSSD `default_shell` |
-| Ghostty doesn't open maximized | `window-save-state` restored an old smaller geometry over `maximize` (macOS only) | keep `window-save-state = never` in `ghostty/config` — `maximize = true` needs it or the saved size wins |
+| Ghostty doesn't open maximized | `window-save-state = always` restored an old geometry over `maximize` (macOS only) | `ghostty/config` uses `window-save-state = default` (not `always`) with `maximize = true`; `always` lets the saved size win |
 | Ghostty doesn't load the config | wrong path | the install path is `~/Library/Application Support/com.mitchellh.ghostty/config` on macOS, `~/.config/ghostty/config` on Linux. `bootstrap.sh` handles this |
 | Windows Terminal lost a profile after merge | WT auto-rewrites — pre-merge backup is at `<settings.json>.bak.<timestamp>` | restore the profile list from the backup |
 | `bootstrap.ps1` errors "cannot create symbolic links" | Developer Mode off and not elevated | enable Developer Mode (Settings → Privacy & security → For developers) OR run from an elevated PowerShell |

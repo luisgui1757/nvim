@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Regression guard for fzf shipping by default and being wired into zsh.
+# fzf adds interactive fuzzy search (Ctrl-R history, Ctrl-T files, Alt-C cd) —
+# complementing zsh-autosuggestions, not replacing it. The runtime side (zshrc
+# still starting cleanly WITHOUT fzf) is covered by zsh_startup_test.sh; this
+# pins the wiring statically so a future edit can't silently drop it.
+set -uo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+fail() { echo "FAIL: $1"; exit 1; }
+
+# 1) install-deps installs fzf, and the PKG_TABLE knows it on every PM.
+grep -q 'install fzf ' "$REPO_ROOT/install-deps.sh" \
+    || fail "install-deps.sh no longer installs fzf"
+grep -qF 'fzf|fzf|fzf' "$REPO_ROOT/install-deps.sh" \
+    || fail "install-deps.sh PKG_TABLE is missing the fzf row"
+
+# 2) zshrc wires fzf, guarded by 'command -v' so a missing fzf can't break
+#    startup, and prefers the modern `fzf --zsh` integration.
+grep -q 'command -v fzf' "$REPO_ROOT/shells/zshrc" \
+    || fail "zshrc fzf integration is not guarded by 'command -v fzf'"
+grep -q 'fzf --zsh' "$REPO_ROOT/shells/zshrc" \
+    || fail "zshrc no longer uses the 'fzf --zsh' integration"
+
+echo "OK"

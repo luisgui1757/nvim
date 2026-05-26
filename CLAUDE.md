@@ -254,12 +254,17 @@ seams. Unset in normal runs, so it's skipped.
   shellcheck-clean.
 - **`nvim/lazy-lock.json` is tracked** (NOT in `.gitignore`). This is how
   every machine ends up on the same plugin commits.
-- **`ghostty/config` sets `window-save-state = never`** alongside
-  `maximize = true`. It's not an oversight: on macOS `window-save-state = always`
-  restores the last window geometry *after* `maximize` applies, overriding it —
-  so the window wouldn't reliably open maximized. `never` guarantees
-  always-maximized on every platform (save-state is a no-op on Linux/GTK). The
-  cost is losing macOS tab/split session restore; that's the intended trade.
+- **`ghostty/config` sets `window-save-state = default`** (NOT `always`)
+  alongside `maximize = true`. It's not an oversight: on macOS
+  `window-save-state = always` restores the last window geometry *after*
+  `maximize` applies, overriding it — so the window wouldn't reliably open
+  maximized. `default` keeps normal launches maximized while still allowing
+  macOS OS-driven session restore (save-state is a no-op on Linux/GTK).
+- **fzf in `shells/zshrc` is guarded by `command -v fzf`** and prefers
+  `fzf --zsh` (fzf ≥ 0.48), falling back to share-dir key-binding files for
+  older distro builds. The guard is load-bearing: `tests/shell/zsh_startup_test.sh`
+  sources zshrc with no fzf installed and expects exit 0, so an unguarded
+  `source <(fzf --zsh)` would break it. Installed by default by `install-deps.sh`.
 
 ## When you're about to make a change
 

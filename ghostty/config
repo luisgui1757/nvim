@@ -21,11 +21,13 @@ background-blur-radius = 15
 window-padding-x = 6
 window-padding-y = 6
 window-padding-balance = true
-# Always open maximized, every platform. window-save-state MUST stay `never`:
-# on macOS `always` restores the last window geometry AFTER `maximize` applies
-# and so overrides it (on Linux/GTK save-state is a no-op either way).
+# Open maximized on every platform. window-save-state stays `default` (NOT
+# `always`): on macOS `always` restores the last window geometry AFTER
+# `maximize` applies and overrides it, so the window wouldn't reliably open
+# maximized. `default` only restores on an OS-driven reopen, so normal launches
+# stay maximized while macOS session restore still works. (No-op on Linux/GTK.)
 maximize = true
-window-save-state = never
+window-save-state = default
 macos-titlebar-style = tabs
 macos-option-as-alt = true
 

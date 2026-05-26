@@ -333,6 +333,7 @@ nvim|neovim|neovim|neovim|neovim|neovim|neovim
 make|make|make|make|make|make|make
 rg|ripgrep|ripgrep|ripgrep|ripgrep|ripgrep|ripgrep
 fd|fd|fd-find|fd-find|fd|fd|fd
+fzf|fzf|fzf|fzf|fzf|fzf|fzf
 starship|starship||||||
 tmux|tmux|tmux|tmux|tmux|tmux|tmux
 zsh|zsh|zsh|zsh|zsh|zsh|zsh
@@ -543,6 +544,7 @@ install nvim "Neovim 0.11+, the editor"
 install make "needed for some plugin builds (notably LuaSnip jsregexp)"
 install rg "ripgrep, powers Telescope live_grep"
 install fd "fd, powers Telescope find_files"
+install fzf "fuzzy finder: Ctrl-R history, Ctrl-T files, Alt-C cd (zsh wiring in shells/zshrc)"
 
 section "prompt"
 if [[ "$PM" == "brew" ]]; then
