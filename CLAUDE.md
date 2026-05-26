@@ -269,6 +269,13 @@ seams. Unset in normal runs, so it's skipped.
   `truncate_to_repo = false`) — not starship's default of 3 folders collapsed to
   the git-repo root. Intentional; raise `truncation_length` / flip
   `truncate_to_repo` to shorten. Guarded by `tests/starship/directory_test.sh`.
+- **`[directory.substitutions]` are "icon + name"** (e.g. `Downloads` →
+  download-glyph + `Downloads`), using Material Design Icon codepoints (U+F0xxx)
+  verified present in Hack Nerd Font. Keep the folder name in the value so it
+  stays readable if a glyph is missing on some machine, and **never let a value
+  become a bare space** — an earlier encoding pass stripped three of these to
+  U+0020, which rendered `~/Downloads`, `~/Music`, `~/Pictures` as a blank `~/`.
+  The same `directory_test.sh` guards against whitespace-only values.
 
 ## When you're about to make a change
 

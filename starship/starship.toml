@@ -43,10 +43,10 @@ truncate_to_repo = false
 truncation_symbol = "…/"
 
 [directory.substitutions]
-Documents = "󰈙"
-Downloads = " "
-Music = " "
-Pictures = " "
+Documents = "󰈙 Documents"
+Downloads = "󰇚 Downloads"
+Music = "󰎄 Music"
+Pictures = "󰋩 Pictures"
 
 [fill]
 style = "fg:overlay"

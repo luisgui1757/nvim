@@ -30,4 +30,18 @@ if ! grep -q "lvl1/lvl2/lvl3/lvl4" <<<"$out"; then
     echo "got: $out"
     exit 1
 fi
+
+# Guard against the "glyph stripped to a bare space" regression -- the bug that
+# made ~/Downloads render as ~/ (a single space). No [directory.substitutions]
+# value may be whitespace-only, and each must keep its folder name (icon + name)
+# so it stays readable even if the glyph is missing on some machine.
+for name in Documents Downloads Music Pictures; do
+    if grep -qE "^${name}[[:space:]]*=[[:space:]]*\"[[:space:]]*\"" "$TOML"; then
+        echo "FAIL: [directory.substitutions] $name is blank/whitespace-only (lost its glyph)"
+        exit 1
+    fi
+    grep -qE "^${name}[[:space:]]*=[[:space:]]*\"[^\"]+ ${name}\"" "$TOML" \
+        || { echo "FAIL: $name substitution is not 'icon + name' (expected a glyph then '$name')"; exit 1; }
+done
+
 echo "OK"
