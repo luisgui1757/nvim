@@ -170,39 +170,66 @@ set_login_shell() {
     fi
 }
 
-set_default_shell_zsh() {
-    if ! have zsh; then
-        printf "  skipped   %-26s zsh not installed; login shell unchanged\n" "default shell"
-        return 0
-    fi
-    local zsh_path current
-    zsh_path="$(zsh_bin)"
-    current="$(current_login_shell 2>/dev/null || true)"
+# True when $1 is defined in the LOCAL /etc/passwd, i.e. chsh (which edits that
+# file) can change its shell. Domain accounts (AD/LDAP via SSSD/winbind) resolve
+# through NSS — `getent` finds them but they are NOT in /etc/passwd, so chsh
+# bails with "user '<name>' does not exist in /etc/passwd".
+is_local_account() {
+    [[ -r /etc/passwd ]] || return 1
+    awk -F: -v u="$1" '$1==u{found=1} END{exit !found}' /etc/passwd
+}
 
-    # Already a zsh? (covers macOS's default + idempotent re-runs). Compare by
-    # basename so /bin/zsh, /usr/bin/zsh, and a brew zsh all count as "done".
-    if [[ "${current##*/}" == "zsh" ]]; then
-        printf "  ok        %-26s already %s\n" "default shell" "${current:-zsh}"
-        return 0
-    fi
+# Domain-account fallback: we can't chsh, so make INTERACTIVE bash re-exec into
+# zsh. Idempotent (a marked block, re-run safe), interactive-only (scp/rsync and
+# scripts stay bash), and it also points login shells (tmux, ssh) at ~/.bashrc
+# so the guard fires there too. Reversible — delete the marked block to undo.
+ensure_bash_execs_zsh() {
+    local rc="$HOME/.bashrc" profile="$HOME/.bash_profile"
+    local marker="# >>> dotfiles: exec zsh (domain login; chsh unavailable) >>>"
+    if [[ -f "$rc" ]] && grep -qF "$marker" "$rc"; then
+        echo "  ok        exec-zsh guard already present in ~/.bashrc"
+    else
+        cat >> "$rc" <<'EOF'
 
+# >>> dotfiles: exec zsh (domain login; chsh unavailable) >>>
+# Interactive bash re-execs into zsh. Guards: not already zsh (no loop), only
+# interactive shells (scp/rsync/scripts stay bash), and zsh must be installed.
+if [ -z "${ZSH_VERSION:-}" ] && [ -n "${BASH_VERSION:-}" ] && [[ $- == *i* ]] && command -v zsh >/dev/null 2>&1; then
+    SHELL="$(command -v zsh)"; export SHELL
+    exec zsh
+fi
+# <<< dotfiles: exec zsh (domain login; chsh unavailable) <<<
+EOF
+    fi
+    # tmux / ssh start a LOGIN bash, which reads ~/.bash_profile (not ~/.bashrc).
+    # Make sure it sources ~/.bashrc so the guard above runs there too.
+    if [[ ! -f "$profile" ]] || ! grep -qF '.bashrc' "$profile"; then
+        cat >> "$profile" <<'EOF'
+
+# dotfiles: ensure interactive login shells read ~/.bashrc
+[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"
+EOF
+    fi
+    return 0
+}
+
+# chsh path — local account, the textbook case.
+adopt_zsh_chsh() {
+    local zsh_path="$1" current="$2"
     if ! ask "Make zsh your default login shell (chsh)? current: ${current:-unknown}"; then
         printf "  skipped   %-26s kept %s\n" "default shell" "${current:-current shell}"
         echo "            (~/.zshrc is symlinked, but tmux / new terminals keep"
         echo "             launching ${current##*/} until the login shell changes)"
         return 0
     fi
-
     if [[ "$DRY_RUN" -eq 1 ]]; then
         echo "  would: register $zsh_path in /etc/shells if needed, then chsh -s $zsh_path"
         return 0
     fi
-
     if ! ensure_in_etc_shells "$zsh_path"; then
         echo "  WARN: could not register $zsh_path in /etc/shells; skipping chsh"
         return 0
     fi
-
     if set_login_shell "$zsh_path"; then
         printf "  changed   %-26s login shell -> %s\n" "default shell" "$zsh_path"
         echo "            log out and back in for it to take effect (tmux started"
@@ -212,6 +239,54 @@ set_default_shell_zsh() {
         echo "        manual:  chsh -s '$zsh_path'"
     fi
     return 0
+}
+
+# Fallback path — domain/non-local account, where chsh cannot help.
+adopt_zsh_domain() {
+    local zsh_path="$1" current="$2"
+    printf "  note      %-26s domain/non-local account; chsh can't change it\n" "default shell"
+    if ! ask "Re-exec interactive bash into zsh via ~/.bashrc instead? (reversible)"; then
+        printf "  skipped   %-26s kept %s\n" "default shell" "${current:-current shell}"
+        echo "            (the 'proper' fix is admin-side: set your directory"
+        echo "             loginShell or SSSD default_shell to $zsh_path)"
+        return 0
+    fi
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        echo "  would: add an interactive 'exec zsh' guard to ~/.bashrc"
+        echo "         (+ make ~/.bash_profile source ~/.bashrc for login shells)"
+        return 0
+    fi
+    ensure_bash_execs_zsh
+    printf "  changed   %-26s ~/.bashrc now execs zsh for interactive shells\n" "default shell"
+    echo "            open a new shell (or new tmux) to land in zsh"
+    return 0
+}
+
+set_default_shell_zsh() {
+    if ! have zsh; then
+        printf "  skipped   %-26s zsh not installed; login shell unchanged\n" "default shell"
+        return 0
+    fi
+    local zsh_path current user
+    zsh_path="$(zsh_bin)"
+    current="$(current_login_shell 2>/dev/null || true)"
+    user="$(id -un 2>/dev/null || echo "${USER:-}")"
+
+    # Already a zsh? (covers macOS's default + idempotent re-runs). Compare by
+    # basename so /bin/zsh, /usr/bin/zsh, and a brew zsh all count as "done".
+    if [[ "${current##*/}" == "zsh" ]]; then
+        printf "  ok        %-26s already %s\n" "default shell" "${current:-zsh}"
+        return 0
+    fi
+
+    # Domain accounts (AD/LDAP) aren't in /etc/passwd, so chsh fails on them;
+    # re-exec bash into zsh instead. macOS accounts live in dscl, not passwd
+    # files, yet chsh works there — so only take the domain branch on Linux.
+    if [[ "$(uname -s)" != "Darwin" ]] && ! is_local_account "$user"; then
+        adopt_zsh_domain "$zsh_path" "$current"
+    else
+        adopt_zsh_chsh "$zsh_path" "$current"
+    fi
 }
 
 # Test seam: `INSTALL_DEPS_SOURCE_ONLY=1 source install-deps.sh` defines the

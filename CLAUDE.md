@@ -221,6 +221,18 @@ It lives in `install-deps.sh`, NOT `bootstrap.sh` (which stays pure-symlink), an
 NOT `tmux.conf` (a tmux-only `default-command` would paper over the symptom while
 bare TTYs and SSH sessions stayed bash).
 
+**Domain / non-local accounts (AD/LDAP/SSSD):** these resolve through NSS but
+are NOT in local `/etc/passwd`, so `chsh` fails (`user '<name>' does not exist in
+/etc/passwd`). `set_default_shell_zsh` detects this on Linux via
+`is_local_account` (an `awk` exact-match on `/etc/passwd`) and routes to
+`adopt_zsh_domain` instead of `adopt_zsh_chsh`. The fallback (`ensure_bash_execs_zsh`)
+appends an idempotent, **interactive-only** (`[[ $- == *i* ]]`, so scp/rsync and
+scripts stay bash) marked block to `~/.bashrc` that `export SHELL`s zsh and
+`exec zsh`, and makes `~/.bash_profile` source `~/.bashrc` so login shells (tmux,
+ssh) hit it too. macOS is excluded from this branch (its accounts live in dscl,
+not passwd files, and `chsh` works there). The textbook chsh path is unchanged
+for local accounts.
+
 **Test seam — leave it:** the line `if [[ -n "${INSTALL_DEPS_SOURCE_ONLY:-}" ]];
 then return …` near the middle of `install-deps.sh` exists ONLY so
 `tests/shell/default_shell_test.sh` can `source` the function defs (without
@@ -242,6 +254,12 @@ seams. Unset in normal runs, so it's skipped.
   shellcheck-clean.
 - **`nvim/lazy-lock.json` is tracked** (NOT in `.gitignore`). This is how
   every machine ends up on the same plugin commits.
+- **`ghostty/config` sets `window-save-state = never`** alongside
+  `maximize = true`. It's not an oversight: on macOS `window-save-state = always`
+  restores the last window geometry *after* `maximize` applies, overriding it —
+  so the window wouldn't reliably open maximized. `never` guarantees
+  always-maximized on every platform (save-state is a no-op on Linux/GTK). The
+  cost is losing macOS tab/split session restore; that's the intended trade.
 
 ## When you're about to make a change
 
