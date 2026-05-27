@@ -1,8 +1,10 @@
 # install-deps.ps1 -- interactively install dependencies on Windows.
 #
-# Uses winget by default (preinstalled on Windows 11 and modern Windows 10
-# builds). Falls back to chocolatey if winget is missing AND choco is present.
-# Otherwise prints manual-install hints and continues.
+# Prefers scoop per tool (most reliable for these CLI tools; sidesteps the flaky
+# winget "No package found matching input criteria" source errors), then falls
+# back to winget, then chocolatey -- if one manager fails for a tool, the next
+# is tried automatically. Offers to bootstrap scoop when missing.
+# Prints manual-install hints only when no manager carries the package.
 #
 # Usage:
 #   .\install-deps.ps1            prompt Y/n for each tool
@@ -140,43 +142,60 @@ function Install-One {
         return
     }
 
-    # Pick the best PM that actually has this package. Primary $Pm first,
-    # then scoop if available (scoop has wider coverage for niche tools),
-    # then anything else still available.
-    $pmsToTry = @($Pm)
-    foreach ($alt in @('scoop','winget','choco')) {
-        if ($alt -ne $Pm -and (Get-Command $alt -ErrorAction SilentlyContinue)) {
-            $pmsToTry += $alt
-        }
+    # Ordered candidate managers, deduped: prefer SCOOP -- it carries every CLI
+    # tool here in its main bucket and avoids the flaky winget "No package found
+    # matching input criteria" (exit -1978335212) source errors. Then the
+    # detected primary, then the rest. Only PMs that are installed AND carry a
+    # package id for this tool make the list.
+    $order = @('scoop', $Pm, 'winget', 'choco')
+    $candidates = @()
+    foreach ($p in $order) {
+        if (-not $p) { continue }
+        if (-not $entry.$p) { continue }
+        if ($candidates.pm -contains $p) { continue }
+        if (-not (Get-Command $p -ErrorAction SilentlyContinue)) { continue }
+        $candidates += [pscustomobject]@{ pm = $p; pkg = $entry.$p }
     }
-    $chosenPm = $null; $chosenPkg = $null
-    foreach ($p in $pmsToTry) {
-        if ($entry.$p) { $chosenPm = $p; $chosenPkg = $entry.$p; break }
-    }
-    if (-not $chosenPm) {
-        Write-Host ("  manual    {0,-26} not in winget/choco/scoop; install separately" -f $tool)
+    if ($candidates.Count -eq 0) {
+        Write-Host ("  manual    {0,-26} not in scoop/winget/choco; install separately" -f $tool)
         return
     }
 
+    $first = $candidates[0]
     $purpose = $entry.purpose
-    $promptText = if ($purpose) { "Install ${tool} via ${chosenPm} (${purpose})?" } else { "Install ${tool} via ${chosenPm}?" }
+    $promptText = if ($purpose) { "Install ${tool} via $($first.pm) (${purpose})?" } else { "Install ${tool} via $($first.pm)?" }
     if (-not (Ask $promptText)) {
         Write-Host ("  skipped   {0,-26}" -f $tool)
         return
     }
     if ($DryRun) {
-        Write-Host ("  would:    $chosenPm install $chosenPkg")
+        $fallback = if ($candidates.Count -gt 1) {
+            "   (fallback: " + (($candidates | Select-Object -Skip 1 | ForEach-Object { $_.pm }) -join ', ') + ")"
+        } else { "" }
+        Write-Host ("  would:    $($first.pm) install $($first.pkg)$fallback")
         return
     }
-    switch ($chosenPm) {
-        'winget' { winget install --id $chosenPkg -e --accept-source-agreements --accept-package-agreements --silent }
-        'choco'  { choco install $chosenPkg -y }
-        'scoop'  { scoop install $chosenPkg }
+
+    # Try each manager in order; fall back to the next one on failure. This is
+    # the key fix: a winget "no package found" no longer dead-ends the tool.
+    $installed = $false
+    foreach ($c in $candidates) {
+        switch ($c.pm) {
+            'winget' { winget install --id $c.pkg -e --accept-source-agreements --accept-package-agreements --silent }
+            'choco'  { choco install $c.pkg -y }
+            'scoop'  { scoop install $c.pkg }
+        }
+        if ($LASTEXITCODE -eq 0 -and (Test-Tool $tool)) {
+            Write-Host ("  installed {0,-26} via {1}" -f $tool, $c.pm)
+            $installed = $true
+            break
+        }
+        Write-Warning ("  $($c.pm) install of $($c.pkg) failed (exit $LASTEXITCODE); trying next manager...")
     }
-    if ($LASTEXITCODE -ne 0) {
-        Write-Warning ("  $chosenPm install of $chosenPkg returned exit code $LASTEXITCODE")
-        # Track failures so we can summarize at the end.
-        $script:InstallFailures += [pscustomobject]@{ Tool = $tool; Pm = $chosenPm; Pkg = $chosenPkg; ExitCode = $LASTEXITCODE }
+    if (-not $installed) {
+        # Track failures so we can summarize at the end instead of faking success.
+        $tried = ($candidates | ForEach-Object { $_.pm }) -join '/'
+        $script:InstallFailures += [pscustomobject]@{ Tool = $tool; Pm = $tried; Pkg = $first.pkg; ExitCode = $LASTEXITCODE }
     }
 }
 

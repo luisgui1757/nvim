@@ -205,6 +205,17 @@ save only**. The next plain `:w` formats normally. Implemented in
   Terminal — WT rewrites that file on launch. Use
   `.\bootstrap.ps1 -MergeWindowsTerminal` to merge the user-owned keys in;
   it backs up the pre-merge `settings.json` first.
+- **`install-deps.ps1` prefers scoop, then falls back across managers
+  per tool.** `Install-One` builds an ordered candidate list (scoop → primary →
+  winget → choco) of managers that are installed AND carry the package, and
+  tries each until one succeeds — so a winget `No package found` (exit
+  `-1978335212`) no longer dead-ends a tool. scoop carries every CLI tool in
+  the `$Catalog`.
+- **`install-deps.sh` prompts for the notes/Obsidian vault** and persists
+  `export NOTES_VAULT=…` to `~/.zshrc.local` (sourced by `zshrc`, read by
+  `util/notes_path.lua`). The prompt is tty-gated (skipped under `--all` /
+  piped / `--dry-run`); the write logic is split into `persist_notes_vault` so
+  `tests/shell/notes_vault_test.sh` can exercise it without a tty.
 
 ## Login shell: zsh adoption (install-deps.sh)
 

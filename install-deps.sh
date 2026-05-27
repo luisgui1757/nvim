@@ -289,6 +289,59 @@ set_default_shell_zsh() {
     fi
 }
 
+# ---- Notes / Obsidian vault -------------------------------------------------
+# obsidian.nvim resolves its vault from $NOTES_VAULT (else an OS default; see
+# nvim/lua/util/notes_path.lua). We persist the user's choice to ~/.zshrc.local
+# (gitignored, sourced by shells/zshrc) so nvim picks it up on the next shell.
+
+# Append `export NOTES_VAULT=<path>` to ~/.zshrc.local and create the dir.
+# Expands a leading ~; echoes the resolved path. Split out from the prompt so
+# tests can exercise it without a tty.
+persist_notes_vault() {
+    local path="$1" rc="$HOME/.zshrc.local"
+    # Expand a leading ~ the user typed literally (it came from `read`, so the
+    # shell's own tilde expansion never ran). Matching a literal ~, not expanding.
+    # shellcheck disable=SC2088
+    case "$path" in
+        "~") path="$HOME" ;;
+        "~/"*) path="$HOME/${path#\~/}" ;;
+    esac
+    mkdir -p "$path" 2>/dev/null || true
+    {
+        printf '\n# dotfiles: notes/Obsidian vault for obsidian.nvim (set by install-deps.sh)\n'
+        printf 'export NOTES_VAULT=%q\n' "$path"
+    } >> "$rc"
+    printf '%s' "$path"
+}
+
+configure_notes_vault() {
+    local rc="$HOME/.zshrc.local"
+    if [[ -n "${NOTES_VAULT:-}" ]]; then
+        printf "  ok        %-26s NOTES_VAULT already set (%s)\n" "notes vault" "$NOTES_VAULT"
+        return 0
+    fi
+    if [[ -f "$rc" ]] && grep -q '^[[:space:]]*export NOTES_VAULT=' "$rc"; then
+        printf "  ok        %-26s NOTES_VAULT already in ~/.zshrc.local\n" "notes vault"
+        return 0
+    fi
+    # Never block non-interactive runs (--all / piped stdin / dry-run); just hint.
+    if [[ "$YES_ALL" -eq 1 || "$DRY_RUN" -eq 1 || ! -t 0 ]]; then
+        printf "  skipped   %-26s export NOTES_VAULT in ~/.zshrc.local to point obsidian.nvim at your vault\n" "notes vault"
+        return 0
+    fi
+    printf "  Path to your notes / Obsidian vault for obsidian.nvim\n"
+    printf "  (absolute or ~-relative; blank = OS default): "
+    local path
+    if ! read -r path || [[ -z "$path" ]]; then
+        printf "  skipped   %-26s using the OS default (see nvim/lua/util/notes_path.lua)\n" "notes vault"
+        return 0
+    fi
+    local resolved
+    resolved="$(persist_notes_vault "$path")"
+    printf "  set       %-26s NOTES_VAULT=%s\n" "notes vault" "$resolved"
+    echo "            (in ~/.zshrc.local; open a new shell or 'source ~/.zshrc.local')"
+}
+
 # Test seam: `INSTALL_DEPS_SOURCE_ONLY=1 source install-deps.sh` defines the
 # functions above (so tests/shell/default_shell_test.sh can exercise the
 # login-shell decision logic) WITHOUT running any package installs.
@@ -590,6 +643,9 @@ install hyperfine "starship prompt perf test"
 install taplo "TOML linter"
 install yamllint "YAML linter"
 install editorconfig-checker
+
+section "notes / Obsidian vault (optional)"
+configure_notes_vault
 
 echo
 echo "install-deps: done"

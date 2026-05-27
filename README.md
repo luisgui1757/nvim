@@ -105,6 +105,12 @@ On **domain / AD / LDAP** machines the account isn't in `/etc/passwd`, so
 `chsh` can't help — there it instead offers to re-exec interactive bash into
 zsh from `~/.bashrc` (reversible).
 
+Phase 1 also **prompts for your notes / Obsidian vault path** and persists it as
+`export NOTES_VAULT=…` in `~/.zshrc.local` (gitignored, sourced by `zshrc`), so
+obsidian.nvim opens that vault. Blank answer = an OS-appropriate default. The
+prompt is skipped under `--all` / non-interactive runs — set `NOTES_VAULT`
+yourself there.
+
 Every script is idempotent — re-running is a no-op when everything is
 already in place. Pre-existing non-symlink targets are backed up to
 `<target>.bak.<timestamp>` (collision-proof: `.1`, `.2`, … if reused).
@@ -232,3 +238,4 @@ make test                       # verify the new state
 | Ghostty doesn't load the config | wrong path | the install path is `~/Library/Application Support/com.mitchellh.ghostty/config` on macOS, `~/.config/ghostty/config` on Linux. `bootstrap.sh` handles this |
 | Windows Terminal lost a profile after merge | WT auto-rewrites — pre-merge backup is at `<settings.json>.bak.<timestamp>` | restore the profile list from the backup |
 | `bootstrap.ps1` errors "cannot create symbolic links" | Developer Mode off and not elevated | enable Developer Mode (Settings → Privacy & security → For developers) OR run from an elevated PowerShell |
+| `install-deps.ps1`: winget `No package found matching input criteria` (exit `-1978335212`) | winget source/catalog flakiness | install-deps now **prefers scoop** and falls back across managers per tool — accept the scoop bootstrap when offered (`irm get.scoop.sh \| iex`) and re-run; scoop carries every CLI tool here |
