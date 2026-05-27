@@ -111,6 +111,14 @@ to lazy-loading (`event` / `cmd` / `keys` / `ft`). Only `rose-pine` may set
 3. Add the server name to `tests/nvim/spec/lsp_spec.lua`'s `required_servers`
    so the static-check catches a future accidental removal.
 
+> **Headless-install gotcha:** `mason-tool-installer` is `event = "VeryLazy"`
+> (interactive auto-install via `run_on_start`) **and** registers its commands
+> under `cmd = { … }`. Those `cmd` triggers are load-bearing — the setup phase
+> runs `nvim --headless +MasonToolsInstallSync`, and `VeryLazy` never fires
+> without a UI, so without the `cmd` trigger that command is `E492: Not an
+> editor command`. Keep `MasonToolsInstallSync`/`MasonToolsUpdate` in the `cmd`
+> list (guarded by `lsp_spec.lua`).
+
 ### Add a new formatter
 
 1. Add to `formatters_by_ft` in `nvim/lua/plugins/conform.lua`.

@@ -18,7 +18,19 @@ return {
 	},
 	{
 		"WhoIsSethDaniel/mason-tool-installer.nvim",
+		-- event = VeryLazy drives the interactive auto-install (run_on_start).
+		-- cmd ALSO registers these as lazy load-triggers so the headless setup
+		-- phase `nvim --headless +MasonToolsInstallSync` actually loads this
+		-- plugin -- VeryLazy never fires without a UI, which is why a clean
+		-- headless install previously failed with "E492: Not an editor command".
 		event = "VeryLazy",
+		cmd = {
+			"MasonToolsInstall",
+			"MasonToolsInstallSync",
+			"MasonToolsUpdate",
+			"MasonToolsUpdateSync",
+			"MasonToolsClean",
+		},
 		dependencies = { "williamboman/mason.nvim" },
 		config = function()
 			require("mason-tool-installer").setup({
