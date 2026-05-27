@@ -35,6 +35,11 @@ check_absent "client.supports_method dot-call replaced (0.11)" \
     --exclude-dir=.git --exclude-dir=tests \
     nvim/
 
+check_absent "vim.lsp.set_log_level replaced by vim.lsp.log.set_level (0.11)" \
+    "vim\\.lsp\\.set_log_level" \
+    --exclude-dir=.git --exclude-dir=tests \
+    nvim/
+
 check_absent "starship literal '(style)' typo gone" \
     "\\]\\(style\\)" \
     --exclude-dir=.git --exclude-dir=tests \

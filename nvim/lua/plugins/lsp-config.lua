@@ -56,7 +56,7 @@ return {
 			local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
 			-- Keep LSP log size sane
-			vim.lsp.set_log_level("ERROR")
+			vim.lsp.log.set_level("ERROR") -- module form; the bare set_log_level call is deprecated in 0.11
 
 			-- NOTE: format-on-save lives in conform.nvim, NOT here.
 			-- Don't add a BufWritePre formatter here or it will race conform.

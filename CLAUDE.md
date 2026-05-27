@@ -84,7 +84,14 @@ that violates one of these, fix it instead of disabling the test.
     (render-markdown.nvim).** Don't add `headlines.nvim` or
     `markview.nvim` alongside it — they overlap and fight for the same
     extmarks. Obsidian.nvim's own UI is disabled (`ui.enable = false`)
-    in `notes.lua` so render-markdown owns rendering everywhere.
+    in `notes.lua` so render-markdown owns rendering everywhere. obsidian.nvim
+    loads on every markdown buffer — it is **no longer** gated on the vault dir
+    existing (`enabled = isdirectory(...)` silently disabled it on machines
+    without a vault). It `mkdir -p`s the resolved vault and honors `NOTES_VAULT`
+    (see `util/notes_path.lua`); set that env var to point at your real vault.
+12. **No `vim.lsp.set_log_level(...)`.** Deprecated in nvim 0.11; use the module
+    form `vim.lsp.log.set_level(...)` (see `lsp-config.lua`). Guarded by
+    `invariants_test.sh`.
 
 ## Common workflows
 
