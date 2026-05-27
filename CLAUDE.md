@@ -248,10 +248,14 @@ save only**. The next plain `:w` formats normally. Implemented in
   bootstrap fails, so nvim sync never runs against un-symlinked configs. Note:
   don't elevate the whole `setup.ps1` — scoop refuses to run as admin.
 - **Forcing Ghostty maximize on Linux is WM-side, not config.** `maximize = true`
-  is only a hint (Wayland compositors may ignore it; X11/Mutter usually honors
-  it). `linux/devilspie2/ghostty-maximize.lua` is an opt-in X11 rule (keyed on
-  WM_CLASS `com.mitchellh.ghostty`); its header documents install + autostart.
-  It is NOT auto-wired by bootstrap (niche + Wayland-incompatible).
+  is only a hint the compositor may ignore — confirmed on **GNOME 46 / X11**,
+  where Mutter does NOT honor it. `install-deps.sh`'s `setup_ghostty_maximize`
+  is an opt-in step (Linux + Ghostty installed + non-Wayland) that installs
+  devilspie2, symlinks `linux/devilspie2/ghostty-maximize.lua` (keyed on WM_CLASS
+  `com.mitchellh.ghostty`) into `~/.config/devilspie2/`, and writes a
+  `~/.config/autostart/devilspie2.desktop`. It lives in install-deps (installs a
+  package + runs a daemon), NOT bootstrap (pure-symlink); Wayland needs a GNOME
+  Shell extension instead. Guarded by `tests/shell/devilspie2_test.sh`.
 
 ## Login shell: zsh adoption (install-deps.sh)
 

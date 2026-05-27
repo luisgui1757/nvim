@@ -694,6 +694,48 @@ configure_vscode_rose_pine() {
     set_vscode_theme "$(vscode_settings_path)"
 }
 
+# GNOME/X11: Ghostty's `maximize = true` is only a hint Mutter may ignore, so
+# enforce it with devilspie2 (X11). Opt-in; only offered when Ghostty is
+# installed and the session is not Wayland (devilspie2 is X11-only). Links the
+# repo rule and enables it at login. Manual equivalent is in the rule's header.
+setup_ghostty_maximize() {
+    [[ "$(uname -s)" == "Linux" ]] || return 0
+    have ghostty || return 0
+    if [[ "${XDG_SESSION_TYPE:-}" == "wayland" ]]; then
+        printf "  skipped   %-26s Wayland session; devilspie2 is X11-only (needs a GNOME extension)\n" "ghostty maximize"
+        return 0
+    fi
+    if ! ask "Force Ghostty to open maximized on GNOME/X11 (devilspie2)?"; then
+        printf "  skipped   %-26s\n" "ghostty maximize"
+        return 0
+    fi
+    local cfg repo rule
+    cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
+    repo="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+    rule="$repo/linux/devilspie2/ghostty-maximize.lua"
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        echo "  would: install devilspie2, link the maximize rule into $cfg/devilspie2/,"
+        echo "         write $cfg/autostart/devilspie2.desktop, and start devilspie2"
+        return 0
+    fi
+    have devilspie2 || pm_install devilspie2 || echo "  WARN: devilspie2 install failed; install it via your package manager"
+    mkdir -p "$cfg/devilspie2" "$cfg/autostart"
+    ln -sfn "$rule" "$cfg/devilspie2/ghostty-maximize.lua"
+    cat > "$cfg/autostart/devilspie2.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=devilspie2
+Exec=devilspie2
+X-GNOME-Autostart-enabled=true
+EOF
+    # Start now (best-effort) so it works without a re-login -- only with a display.
+    if have devilspie2 && [[ -n "${DISPLAY:-}" ]]; then
+        (devilspie2 >/dev/null 2>&1 &) || true
+    fi
+    printf "  set       %-26s devilspie2 rule linked + autostart enabled\n" "ghostty maximize"
+    echo "            open a new Ghostty window (runs automatically on next login too)"
+}
+
 # WSL clipboard bridge: check that win32yank.exe is reachable from WSL PATH.
 check_wsl_clipboard() {
     if have win32yank.exe; then
@@ -737,6 +779,7 @@ if [[ "$(uname -s)" == "Darwin" ]] && [[ "$PM" == "brew" ]]; then
 elif [[ "$(uname -s)" == "Linux" ]]; then
     install_ghostty_linux
 fi
+setup_ghostty_maximize   # GNOME/X11 only: enforce Ghostty maximize via devilspie2 (opt-in)
 
 section "editor: VS Code (optional)"
 install_vscode
