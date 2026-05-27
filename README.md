@@ -13,6 +13,30 @@
 
 ## Install
 
+> **TL;DR — the one command is `setup`.** Run `setup.sh` (macOS / Linux / WSL)
+> or `setup.ps1` (Windows). That's it. It installs dependencies, symlinks every
+> config, and syncs Neovim plugins + LSP. You do **not** run `bootstrap.sh` or
+> `install-deps.sh` yourself — `setup` runs them for you, in order.
+
+`setup` is the supreme call: a thin orchestrator over four idempotent phases.
+
+```
+setup ─► install-deps   (phase 1: install packages)
+      ─► bootstrap       (phase 2: symlink configs into place)
+      ─► nvim +Lazy! sync                (phase 3: plugins)
+      ─► nvim +MasonToolsInstallSync     (phase 4: LSP servers + formatters)
+```
+
+You only reach for the phase scripts to **re-run a single phase later** (e.g.
+`bootstrap.sh` to re-symlink after moving the repo). On a fresh machine, ignore
+them and run `setup`.
+
+| Situation | Command |
+|---|---|
+| **New machine — the normal case** | **`setup.sh`** · **`setup.ps1`** |
+| Re-symlink configs only (no installs) | `bootstrap.sh` · `bootstrap.ps1` |
+| (Re)install packages only | `install-deps.sh` · `install-deps.ps1` |
+
 ### One-shot, from scratch (recommended)
 
 No checkout needed. `setup.{sh,ps1}` clones the repo to `~/dotfiles`
