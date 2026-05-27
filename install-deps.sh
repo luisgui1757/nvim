@@ -342,6 +342,47 @@ configure_notes_vault() {
     echo "            (in ~/.zshrc.local; open a new shell or 'source ~/.zshrc.local')"
 }
 
+# ---- VS Code: Rose Pine theme (pure helpers; tested) ------------------------
+# Where VS Code stores user settings.json, per OS.
+vscode_settings_path() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        printf '%s' "$HOME/Library/Application Support/Code/User/settings.json"
+    else
+        printf '%s' "${XDG_CONFIG_HOME:-$HOME/.config}/Code/User/settings.json"
+    fi
+}
+
+# Set "workbench.colorTheme":"Rosé Pine" in a VS Code settings.json. The value
+# is a literal é (UTF-8) — it must match the theme label contributed by the
+# mvllow.rose-pine extension exactly. Handles:
+#   - absent/empty  -> write a fresh minimal settings.json
+#   - valid JSON    -> jq-merge the key (preserves existing settings)
+#   - JSONC/no jq   -> leave the file untouched and print an instruction
+#                      (VS Code settings are usually JSONC; never clobber them)
+set_vscode_theme() {
+    local settings="${1:-}"
+    [[ -n "$settings" ]] || settings="$(vscode_settings_path)"
+    mkdir -p "$(dirname "$settings")" 2>/dev/null || true
+    if [[ ! -s "$settings" ]]; then
+        printf '{\n  "workbench.colorTheme": "Rosé Pine"\n}\n' > "$settings"
+        printf "  set       %-26s workbench.colorTheme (new settings.json)\n" "rose-pine (vscode)"
+        return 0
+    fi
+    if have jq && jq -e . "$settings" >/dev/null 2>&1; then
+        local tmp; tmp="$(mktemp)"
+        if jq '. + {"workbench.colorTheme":"Rosé Pine"}' "$settings" > "$tmp"; then
+            mv "$tmp" "$settings"
+            printf "  set       %-26s workbench.colorTheme (merged)\n" "rose-pine (vscode)"
+        else
+            rm -f "$tmp"
+            echo "  WARN: could not merge theme into $settings"
+        fi
+        return 0
+    fi
+    echo "  note      set workbench.colorTheme to \"Rose Pine\" in $settings (left untouched: comments / no jq)"
+    return 0
+}
+
 # Test seam: `INSTALL_DEPS_SOURCE_ONLY=1 source install-deps.sh` defines the
 # functions above (so tests/shell/default_shell_test.sh can exercise the
 # login-shell decision logic) WITHOUT running any package installs.
@@ -574,6 +615,68 @@ install_ghostty_linux() {
     echo "              - source:  https://ghostty.org/docs/install/build"
 }
 
+# VS Code: brew cask on macOS; snap, then flatpak, then a manual hint on Linux.
+install_vscode() {
+    if have code; then
+        printf "  ok        %-26s already installed\n" "vscode"
+        return
+    fi
+    if [[ "$(uname -s)" == "Darwin" ]] && [[ "$PM" == "brew" ]]; then
+        if ask "Install Visual Studio Code (brew --cask)?"; then
+            if [[ "$DRY_RUN" -eq 1 ]]; then
+                echo "  would: brew install --cask visual-studio-code"
+            else
+                brew install --cask visual-studio-code || echo "  WARN: cask install failed"
+            fi
+        fi
+        return
+    fi
+    if have snap; then
+        if ask "Install Visual Studio Code via snap?"; then
+            if [[ "$DRY_RUN" -eq 1 ]]; then
+                echo "  would: sudo snap install code --classic"
+            else
+                maybe_sudo snap install code --classic || echo "  WARN: snap install failed"
+            fi
+            return
+        fi
+    elif have flatpak; then
+        if ask "Install Visual Studio Code via flatpak?"; then
+            if [[ "$DRY_RUN" -eq 1 ]]; then
+                echo "  would: flatpak install -y flathub com.visualstudio.code"
+            else
+                flatpak install -y flathub com.visualstudio.code || echo "  WARN: flatpak install failed"
+            fi
+            return
+        fi
+    fi
+    echo "  manual    vscode: install from https://code.visualstudio.com/docs/setup/linux"
+    echo "            (the Microsoft apt/dnf repo or snap both provide a 'code' CLI)"
+}
+
+# If a usable `code` CLI exists (VS Code detected), offer to install the Rose
+# Pine theme extension and set it as the active theme.
+configure_vscode_rose_pine() {
+    if ! have code; then
+        printf "  skipped   %-26s no 'code' CLI (open VS Code -> 'Shell Command: Install code command in PATH')\n" "rose-pine (vscode)"
+        return
+    fi
+    if ! ask "VS Code: install the Rose Pine theme and set it active?"; then
+        printf "  skipped   %-26s\n" "rose-pine (vscode)"
+        return
+    fi
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        echo "  would: code --install-extension mvllow.rose-pine; set workbench.colorTheme = Rose Pine"
+        return
+    fi
+    if code --install-extension mvllow.rose-pine >/dev/null 2>&1; then
+        printf "  installed %-26s mvllow.rose-pine\n" "rose-pine (vscode)"
+    else
+        echo "  WARN: 'code --install-extension mvllow.rose-pine' failed"
+    fi
+    set_vscode_theme
+}
+
 # WSL clipboard bridge: check that win32yank.exe is reachable from WSL PATH.
 check_wsl_clipboard() {
     if have win32yank.exe; then
@@ -617,6 +720,10 @@ if [[ "$(uname -s)" == "Darwin" ]] && [[ "$PM" == "brew" ]]; then
 elif [[ "$(uname -s)" == "Linux" ]]; then
     install_ghostty_linux
 fi
+
+section "editor: VS Code (optional)"
+install_vscode
+configure_vscode_rose_pine
 
 section "fonts"
 install fc-cache "font config (needed to install Hack Nerd Font on Linux)"

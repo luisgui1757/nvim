@@ -216,6 +216,17 @@ save only**. The next plain `:w` formats normally. Implemented in
   `util/notes_path.lua`). The prompt is tty-gated (skipped under `--all` /
   piped / `--dry-run`); the write logic is split into `persist_notes_vault` so
   `tests/shell/notes_vault_test.sh` can exercise it without a tty.
+- **`install-deps` can install VS Code + the Rose Pine theme.** Both installers
+  offer VS Code (macOS brew cask; Linux snap/flatpak/manual; Windows
+  winget/scoop/choco). Then, **only if `code` is detected**, they install the
+  `mvllow.rose-pine` extension and set `workbench.colorTheme` to "Rosé Pine".
+  The theme setter (`set_vscode_theme` in sh, tested by `vscode_theme_test.sh`;
+  `Set-VSCodeTheme` in ps1) only merges into *clean* JSON (jq /
+  `ConvertFrom-Json`) — VS Code settings are usually JSONC with comments, so it
+  leaves those untouched rather than clobbering them. The theme value must keep
+  its accented é to match the extension's label; the ps1 emits it as a `\u` JSON
+  escape (or `[char]0xE9`) so that file stays pure ASCII (invariant), while the
+  sh side uses the literal é.
 
 ## Login shell: zsh adoption (install-deps.sh)
 

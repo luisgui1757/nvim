@@ -104,6 +104,7 @@ $Catalog = @{
     shellcheck           = @{ winget = 'koalaman.shellcheck';              choco = 'shellcheck';           scoop = 'shellcheck'           ; purpose = 'shell-script linter' }
     hyperfine            = @{ winget = 'sharkdp.hyperfine';                choco = 'hyperfine';            scoop = 'hyperfine'            ; purpose = 'starship perf benchmark' }
     taplo                = @{ winget = '';                                 choco = '';                     scoop = 'taplo'                ; purpose = 'TOML linter' }
+    code                 = @{ winget = 'Microsoft.VisualStudioCode';       choco = 'vscode';               scoop = 'extras/vscode'        ; purpose = 'VS Code editor' }
 }
 
 # Some Catalog keys (e.g. "rg") map to a different actual binary on Windows
@@ -123,6 +124,7 @@ $BinaryName = @{
     shellcheck  = 'shellcheck'
     hyperfine   = 'hyperfine'
     taplo       = 'taplo'
+    code        = 'code'
 }
 
 function Test-Tool {
@@ -274,6 +276,56 @@ function Install-HackNerdFont {
     }
 }
 
+# ---- VS Code Rose Pine theme -------------------------------------------------
+# Set "workbench.colorTheme" to Rose Pine in %APPDATA%\Code\User\settings.json.
+# The theme label has an accented e; we write it as the JSON escape \u00e9 (this
+# file must stay pure ASCII) or build it with [char]0xE9 for the merge path.
+function Set-VSCodeTheme {
+    $settings = Join-Path $env:APPDATA "Code\User\settings.json"
+    $dir = Split-Path -Parent $settings
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+    $utf8 = [System.Text.UTF8Encoding]::new($false)   # no BOM
+
+    $raw = if (Test-Path -LiteralPath $settings) { Get-Content -Raw -LiteralPath $settings -ErrorAction SilentlyContinue } else { $null }
+    if ([string]::IsNullOrWhiteSpace($raw)) {
+        $json = "{`r`n  ""workbench.colorTheme"": ""Ros\u00e9 Pine""`r`n}`r`n"
+        [System.IO.File]::WriteAllText($settings, $json, $utf8)
+        Write-Host ("  set       {0,-26} workbench.colorTheme (new settings.json)" -f "rose-pine (vscode)")
+        return
+    }
+    try {
+        $obj = $raw | ConvertFrom-Json -ErrorAction Stop
+        $obj | Add-Member -NotePropertyName 'workbench.colorTheme' -NotePropertyValue ("Ros$([char]0xE9) Pine") -Force
+        [System.IO.File]::WriteAllText($settings, ($obj | ConvertTo-Json -Depth 100), $utf8)
+        Write-Host ("  set       {0,-26} workbench.colorTheme (merged)" -f "rose-pine (vscode)")
+    } catch {
+        Write-Host ("  note      set workbench.colorTheme to ""Rose Pine"" in $settings (left untouched: comments/invalid JSON)")
+    }
+}
+
+# VS Code detected -> offer the Rose Pine theme extension + set it active.
+function Install-VSCodeRosePine {
+    if (-not (Get-Command code -ErrorAction SilentlyContinue)) {
+        Write-Host ("  skipped   {0,-26} no 'code' CLI on PATH (reopen your shell after installing VS Code)" -f "rose-pine (vscode)")
+        return
+    }
+    if (-not (Ask "VS Code: install the Rose Pine theme and set it active?")) {
+        Write-Host ("  skipped   {0,-26}" -f "rose-pine (vscode)")
+        return
+    }
+    if ($DryRun) {
+        Write-Host "  would:    code --install-extension mvllow.rose-pine; set workbench.colorTheme = Rose Pine"
+        return
+    }
+    code --install-extension mvllow.rose-pine 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host ("  installed {0,-26} mvllow.rose-pine" -f "rose-pine (vscode)")
+    } else {
+        Write-Warning "  'code --install-extension mvllow.rose-pine' failed"
+    }
+    Set-VSCodeTheme
+}
+
 function Section { param([string]$title) Write-Host ""; Write-Host "== $title ==" }
 
 # ---- Sections ----------------------------------------------------------------
@@ -302,6 +354,10 @@ Install-One jq
 Install-One shellcheck
 Install-One hyperfine
 Install-One taplo
+
+Section "editor: VS Code (optional)"
+Install-One code
+Install-VSCodeRosePine
 
 Section "fonts"
 Install-HackNerdFont

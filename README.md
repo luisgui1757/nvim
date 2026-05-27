@@ -152,7 +152,10 @@ when their dependency tool is missing on the current machine.
 - **One source of truth via symlinks.** Edits in the repo are live everywhere
   without manual copy-paste; `bootstrap.{sh,ps1}` are idempotent.
 - **Rose Pine everywhere it can render.** Nvim, lualine, starship, tmux,
-  ghostty, Windows Terminal, PSReadLine — same palette across the stack.
+  ghostty, Windows Terminal, PSReadLine — same palette across the stack. VS Code
+  joins optionally: `install-deps` offers VS Code, and if `code` is detected it
+  installs the `mvllow.rose-pine` theme and sets `workbench.colorTheme` (existing
+  JSONC settings are left untouched).
 - **conform.nvim is the only format-on-save handler.** Replacing the
   prior LSP-attach autocmd + null-ls duo eliminates a real race condition
   with different timeouts. `:WNF` (or `:wnf`) skips formatting for one save.
