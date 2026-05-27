@@ -689,7 +689,9 @@ configure_vscode_rose_pine() {
     else
         echo "  WARN: 'code --install-extension mvllow.rose-pine' failed"
     fi
-    set_vscode_theme
+    # Pass the resolved path explicitly (the test injects its own). Passing an
+    # arg also avoids shellcheck SC2120/SC2119 on the optional-$1 setter.
+    set_vscode_theme "$(vscode_settings_path)"
 }
 
 # WSL clipboard bridge: check that win32yank.exe is reachable from WSL PATH.
