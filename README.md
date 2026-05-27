@@ -56,7 +56,10 @@ curl -fsSL https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.sh 
 irm https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.ps1 | iex
 ```
 
-Add `--all` / `-All` for fully non-interactive (Y to every prompt).
+Add `--all` / `-All` for fully non-interactive (Y to every prompt). An
+interactive run (no `--all`) also opens with a single **"install EVERYTHING
+without further prompts? [Y/n]"** question — answer `Y` to pull the lot in one
+go, or `n` to choose per tool.
 Add `--dry-run` / `-DryRun` to preview every step without touching disk.
 
 ### From an existing checkout
@@ -240,5 +243,6 @@ make test                       # verify the new state
 | Ghostty doesn't open maximized | `window-save-state = always` restored an old geometry over `maximize` (macOS only) | `ghostty/config` uses `window-save-state = default` (not `always`) with `maximize = true`; `always` lets the saved size win |
 | Ghostty doesn't load the config | wrong path | the install path is `~/Library/Application Support/com.mitchellh.ghostty/config` on macOS, `~/.config/ghostty/config` on Linux. `bootstrap.sh` handles this |
 | Windows Terminal lost a profile after merge | WT auto-rewrites — pre-merge backup is at `<settings.json>.bak.<timestamp>` | restore the profile list from the backup |
-| `bootstrap.ps1` errors "cannot create symbolic links" | Developer Mode off and not elevated | enable Developer Mode (Settings → Privacy & security → For developers) OR run from an elevated PowerShell |
+| `bootstrap.ps1` errors "cannot create symbolic links" | Developer Mode off and not elevated | `bootstrap.ps1` now reports your *elevated* + *Developer Mode* state and the fix: enable Developer Mode (Settings → Privacy & security → For developers — no admin, recommended) **then** `.\setup.ps1 -SkipDeps`; OR run just `.\bootstrap.ps1` from an elevated PowerShell. Don't elevate the whole `setup.ps1` — scoop refuses to run as admin |
+| Ghostty won't open maximized on Linux/GNOME | `maximize = true` is a hint the WM may ignore | on **X11** it usually works (Mutter honors it); if not, use the devilspie2 rule in `linux/devilspie2/ghostty-maximize.lua` (setup steps are in that file). Wayland needs a GNOME Shell extension instead |
 | `install-deps.ps1`: winget `No package found matching input criteria` (exit `-1978335212`) | winget source/catalog flakiness | install-deps now **prefers scoop** and falls back across managers per tool — accept the scoop bootstrap when offered (`irm get.scoop.sh \| iex`) and re-run; scoop carries every CLI tool here |

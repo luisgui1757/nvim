@@ -120,6 +120,21 @@ function Test-CanCreateSymlinks {
     }
 }
 
+function Test-IsElevated {
+    try {
+        $id = [Security.Principal.WindowsIdentity]::GetCurrent()
+        return ([Security.Principal.WindowsPrincipal]$id).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    } catch { return $false }
+}
+
+function Test-DevModeOn {
+    # Developer Mode sets AllowDevelopmentWithoutDevLicense=1 under AppModelUnlock.
+    try {
+        $k = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock'
+        return (((Get-ItemProperty -Path $k -Name AllowDevelopmentWithoutDevLicense -ErrorAction Stop).AllowDevelopmentWithoutDevLicense) -eq 1)
+    } catch { return $false }
+}
+
 Write-Host "bootstrap.ps1: repo=$RepoRoot dry-run=$DryRun"
 Write-Host
 
@@ -128,11 +143,20 @@ Write-Host
 if ($DryRun) {
     Write-Host "  (DryRun: skipping symlink-privilege probe)"
 } elseif (-not (Test-CanCreateSymlinks)) {
-    Write-Error @"
-Cannot create symbolic links. Either:
-  - Run this from an elevated PowerShell, OR
-  - Enable Developer Mode: Settings -> Privacy & security -> For developers -> Developer Mode = On
-"@
+    # Detect WHY and tell the user exactly what to do, instead of a raw error.
+    $elevated = if (Test-IsElevated) { 'yes' } else { 'no' }
+    $devmode  = if (Test-DevModeOn)  { 'on' }  else { 'off' }
+    Write-Host ""
+    Write-Host "bootstrap.ps1: cannot create symbolic links here." -ForegroundColor Red
+    Write-Host "  elevated (admin): $elevated    Developer Mode: $devmode"
+    Write-Host ""
+    Write-Host "  Fix EITHER way (Developer Mode recommended -- no admin, and keeps" -ForegroundColor Yellow
+    Write-Host "  scoop/nvim working unprivileged):" -ForegroundColor Yellow
+    Write-Host "    1) Enable Developer Mode: Settings -> Privacy & security -> For"
+    Write-Host "       developers -> Developer Mode = On.  Then:  .\setup.ps1 -SkipDeps"
+    Write-Host "    2) OR run just this step elevated (admin PowerShell):  .\bootstrap.ps1"
+    Write-Host "       then back in a normal shell:  .\setup.ps1 -SkipDeps -SkipBootstrap"
+    Write-Host ""
     exit 1
 }
 

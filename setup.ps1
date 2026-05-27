@@ -106,7 +106,15 @@ if (-not $SkipDeps) {
 # ---- Phase 2: symlink configs ------------------------------------------------
 if (-not $SkipBootstrap) {
     Phase "Phase 2/4: symlink configs into place"
+    $global:LASTEXITCODE = 0   # reset so a stale code from Phase 1 can't false-trip
     & (Join-Path $ScriptDir 'bootstrap.ps1') @bootstrapArgs
+    if ($LASTEXITCODE -ne 0) {
+        # bootstrap already printed the actionable fix (Dev Mode / elevation).
+        # Stop here rather than running nvim sync against un-symlinked configs.
+        Write-Host ""
+        Write-Host "setup.ps1: stopping -- Phase 2 (bootstrap) failed; see the fix above." -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
 } else {
     Write-Host ""
     Write-Host "skipped: Phase 2 (bootstrap) via -SkipBootstrap"

@@ -87,6 +87,19 @@ if (-not $Pm) {
     exit 1
 }
 
+# One-shot "install everything" vs per-item prompts. Skipped when -All / -DryRun
+# was passed or the session is non-interactive. Enter / Y == everything.
+if ((-not $All) -and (-not $DryRun) -and [Environment]::UserInteractive) {
+    $resp = Read-Host "Install EVERYTHING without further prompts? [Y/n]  (n = choose per tool)"
+    if ($resp -match '^[Nn]') {
+        Write-Host "  -> per-item prompts"
+    } else {
+        $All = $true
+        Write-Host "  -> installing everything; no further prompts"
+    }
+    Write-Host ""
+}
+
 # ---- Per-tool: package id per PM. Empty string means "not available there". --
 # Keys are the command name we check via Get-Command.
 $Catalog = @{

@@ -227,6 +227,23 @@ save only**. The next plain `:w` formats normally. Implemented in
   its accented é to match the extension's label; the ps1 emits it as a `\u` JSON
   escape (or `[char]0xE9`) so that file stays pure ASCII (invariant), while the
   sh side uses the literal é.
+- **Both installers open with an "install EVERYTHING?" prompt.** Interactive
+  runs that didn't pass `--all`/`-All` get one upfront question; answering yes
+  flips `YES_ALL`/`$All` so the rest runs with no per-item prompts. Skipped when
+  `--all`/`--dry-run` was passed or there's no tty (so `curl|bash` and the CI
+  `--dry-run --all` dogfood don't hang).
+- **`bootstrap.ps1` reports WHY symlinks fail and how to fix it.** When the
+  symlink probe fails it prints your *elevated* (admin) and *Developer Mode*
+  state, then the two fixes (Developer Mode — no admin, recommended — or an
+  elevated shell), and `exit 1` via `Write-Host` (not `Write-Error`, so no stack
+  trace). `setup.ps1` resets `$LASTEXITCODE` before Phase 2 and stops if
+  bootstrap fails, so nvim sync never runs against un-symlinked configs. Note:
+  don't elevate the whole `setup.ps1` — scoop refuses to run as admin.
+- **Forcing Ghostty maximize on Linux is WM-side, not config.** `maximize = true`
+  is only a hint (Wayland compositors may ignore it; X11/Mutter usually honors
+  it). `linux/devilspie2/ghostty-maximize.lua` is an opt-in X11 rule (keyed on
+  WM_CLASS `com.mitchellh.ghostty`); its header documents install + autostart.
+  It is NOT auto-wired by bootstrap (niche + Wayland-incompatible).
 
 ## Login shell: zsh adoption (install-deps.sh)
 

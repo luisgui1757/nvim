@@ -414,6 +414,21 @@ fi
 echo "install-deps: OS=$OS_LABEL  package manager=$PM  dry-run=$DRY_RUN  yes-all=$YES_ALL"
 echo
 
+# One-shot "install everything" vs the per-item prompts. Skipped when --all was
+# already passed, and when there's no tty to read from (e.g. curl | bash).
+# Enter / Y == everything (recommended); n == choose per tool.
+if [[ "$YES_ALL" -ne 1 && -t 0 ]]; then
+    printf "Install EVERYTHING without further prompts? [Y/n]  (n = choose per tool) "
+    if IFS= read -r _all_ans && [[ "$_all_ans" =~ ^[Nn] ]]; then
+        echo "  -> per-item prompts"
+    else
+        YES_ALL=1
+        echo "  -> installing everything; no further prompts"
+    fi
+    unset _all_ans
+    echo
+fi
+
 # ---- Package-name resolution (Bash 3.2-safe, no associative arrays) ----------
 #
 # Table format: lines of "tool|brew|apt|dnf|pacman|zypper|apk".
