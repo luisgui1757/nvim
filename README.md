@@ -108,6 +108,11 @@ On **domain / AD / LDAP** machines the account isn't in `/etc/passwd`, so
 `chsh` can't help — there it instead offers to re-exec interactive bash into
 zsh from `~/.bashrc` (reversible).
 
+On Linux without Homebrew, Phase 1 installs Neovim from the official GitHub
+stable tarball into `/opt/nvim-linux-<arch>` (`x86_64` or `arm64`) and symlinks
+`/usr/local/bin/nvim`. That avoids distro packages that lag below this config's
+Neovim 0.11+ floor.
+
 Phase 1 also **prompts for your notes / Obsidian vault path** and persists it as
 `export NOTES_VAULT=…` in `~/.zshrc.local` (gitignored, sourced by `zshrc`), so
 obsidian.nvim opens that vault. Blank answer = an OS-appropriate default. The

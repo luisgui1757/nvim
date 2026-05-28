@@ -383,6 +383,65 @@ set_vscode_theme() {
     return 0
 }
 
+install_nvim_linux() {
+    if have nvim; then
+        printf "  ok        %-26s already installed\n" "nvim"
+        return
+    fi
+    local machine arch asset url install_dir tmp tarball
+    machine="$(uname -m)"
+    case "$machine" in
+        x86_64|amd64) arch="x86_64" ;;
+        aarch64|arm64) arch="arm64" ;;
+        *)
+            printf "  manual    %-26s unsupported Linux arch: %s\n" "nvim" "$machine"
+            echo "            install from https://github.com/neovim/neovim/releases"
+            return
+            ;;
+    esac
+
+    asset="nvim-linux-${arch}.tar.gz"
+    url="https://github.com/neovim/neovim/releases/download/stable/${asset}"
+    install_dir="/opt/nvim-linux-${arch}"
+
+    if ! ask "Install nvim (official Neovim stable Linux ${arch} tarball)?"; then
+        printf "  skipped   %-26s\n" "nvim"
+        return
+    fi
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        echo "  would: curl -fsSL $url -o /tmp/$asset"
+        echo "         sudo rm -rf $install_dir"
+        echo "         sudo tar -xzf /tmp/$asset -C /opt"
+        echo "         sudo ln -sfn $install_dir/bin/nvim /usr/local/bin/nvim"
+        return
+    fi
+
+    tmp="$(mktemp -d)"
+    tarball="$tmp/$asset"
+    if ! curl -fsSL "$url" -o "$tarball"; then
+        echo "  FAIL: nvim download failed from $url"
+        rm -rf "$tmp"
+        return
+    fi
+    if ! maybe_sudo rm -rf "$install_dir"; then
+        echo "  FAIL: could not clear $install_dir"
+        rm -rf "$tmp"
+        return
+    fi
+    if ! maybe_sudo tar -xzf "$tarball" -C /opt; then
+        echo "  FAIL: could not extract $asset into /opt"
+        rm -rf "$tmp"
+        return
+    fi
+    if ! maybe_sudo ln -sfn "$install_dir/bin/nvim" /usr/local/bin/nvim; then
+        echo "  FAIL: could not link /usr/local/bin/nvim"
+        rm -rf "$tmp"
+        return
+    fi
+    rm -rf "$tmp"
+    printf "  installed %-26s -> %s/bin/nvim\n" "nvim" "$install_dir"
+}
+
 # Test seam: `INSTALL_DEPS_SOURCE_ONLY=1 source install-deps.sh` defines the
 # functions above (so tests/shell/default_shell_test.sh can exercise the
 # login-shell decision logic) WITHOUT running any package installs.
@@ -755,7 +814,11 @@ section() { echo; echo "== $1 =="; }
 
 section "core editor stack"
 install git "version control, required by lazy.nvim"
-install nvim "Neovim 0.11+, the editor"
+if [[ "$(uname -s)" == "Linux" && "$PM" != "brew" ]]; then
+    install_nvim_linux
+else
+    install nvim "Neovim 0.11+, the editor"
+fi
 install make "needed for some plugin builds (notably LuaSnip jsregexp)"
 install rg "ripgrep, powers Telescope live_grep"
 install fd "fd, powers Telescope find_files"
