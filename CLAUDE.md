@@ -402,6 +402,9 @@ seams. Unset in normal runs, so it's skipped.
   `maximize` applies, overriding it — so the window wouldn't reliably open
   maximized. `default` keeps normal launches maximized while still allowing
   macOS OS-driven session restore (save-state is a no-op on Linux/GTK).
+- **Ghostty clipboard read prompts, write/copy allows.** `clipboard-read = ask`
+  keeps paste/read access consent-gated, while `clipboard-write = allow` and
+  `copy-on-select = clipboard` preserve fast copying out of the terminal.
 - **fzf in `shells/zshrc` is guarded by `command -v fzf`** and prefers
   `fzf --zsh` (fzf ≥ 0.48), falling back to share-dir key-binding files for
   older distro builds. The guard is load-bearing: `tests/shell/zsh_startup_test.sh`

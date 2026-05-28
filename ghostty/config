@@ -43,7 +43,7 @@ shell-integration-features = cursor,sudo,title
 
 # ---- Scrollback / clipboard --------------------------------------------------
 scrollback-limit = 50000
-clipboard-read = allow
+clipboard-read = ask
 clipboard-write = allow
 clipboard-paste-protection = true
 
