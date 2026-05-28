@@ -24,7 +24,7 @@ trap 'rm -rf "$TMP_REPO"' EXIT
     && git init -q \
     && git -c user.email=ci@example.com -c user.name=ci commit --allow-empty -qm "test" )
 
-out=$(STARSHIP_CONFIG="$REPO_ROOT/starship/starship.toml" \
+out=$(cd "$TMP_REPO" && STARSHIP_CONFIG="$REPO_ROOT/starship/starship.toml" \
       starship prompt --terminal-width 120 --jobs 0 --status 0 --cmd-duration 0 2>&1)
 
 # A successful render should not literally include "(style)" — that would mean
