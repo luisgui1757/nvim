@@ -77,6 +77,15 @@ for stale in mason-lspconfig.nvim none-ls.nvim CopilotChat.nvim copilot.vim nui.
     fi
 done
 
+markdown_renderers=$(grep -nE "headlines\\.nvim|markview\\.nvim" nvim/lua/plugins/*.lua 2>/dev/null || true)
+if [[ -n "$markdown_renderers" ]]; then
+    echo "FAIL: markdown rendering must stay owned by render-markdown.nvim:"
+    echo "$markdown_renderers"
+    fail=1
+else
+    echo "ok  : markdown rendering excludes headlines.nvim and markview.nvim"
+fi
+
 # .ps1 files must be pure ASCII. Windows PowerShell 5.1 reads files
 # without a BOM as ANSI / CP-1252; UTF-8 multi-byte chars (em-dash,
 # arrows) get mis-tokenized and cause "Missing closing ')'" parse
