@@ -9,7 +9,9 @@ describe("markdown rendering plugin", function()
   end)
 
   it("lazy-loads on markdown ft only", function()
-    assert.is_truthy(src:match('ft = { "markdown"'), "render-markdown should only load when entering a markdown buffer")
+    assert.is_truthy(src:match('ft = { "markdown" }'), "render-markdown should only load when entering a markdown buffer")
+    assert.is_nil(src:match("Avante"))
+    assert.is_nil(src:match("codecompanion"))
   end)
 
   it("enables task-list checkbox rendering", function()
