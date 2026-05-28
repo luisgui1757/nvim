@@ -104,16 +104,10 @@ if (Get-Module -ListAvailable PSReadLine) {
     # PredictionSource + PredictionViewStyle landed in PSReadLine 2.1 / 2.2.
     # Older PS 5.1 installs may ship PSReadLine 2.0 which rejects these args.
     $psrl = Get-Module PSReadLine
-    # Detect tmux / psmux: overlay-drawing PSReadLine features (ListView,
-    # MenuComplete, tooltips) rely on cursor save/restore + multi-line redraw
-    # that ConPTY-via-psmux passes through unreliably. Inside a multiplexer we
-    # fall back to mux-safe variants (InlineView ghost text, Complete cycle).
-    $inMux = [bool]($env:TMUX -or $env:TMUX_PANE -or $env:TERM -match '^(tmux|screen)')
     if ($psrl -and $psrl.Version -ge [Version]'2.2.0') {
         try {
             Set-PSReadLineOption -PredictionSource HistoryAndPlugin -ErrorAction Stop
-            $viewStyle = if ($inMux) { 'InlineView' } else { 'ListView' }
-            Set-PSReadLineOption -PredictionViewStyle $viewStyle -ErrorAction Stop
+            Set-PSReadLineOption -PredictionViewStyle ListView -ErrorAction Stop
         } catch { Write-Verbose $_.Exception.Message }
     } elseif ($psrl -and $psrl.Version -ge [Version]'2.1.0') {
         try { Set-PSReadLineOption -PredictionSource History -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
@@ -137,17 +131,7 @@ if (Get-Module -ListAvailable PSReadLine) {
         }
     } catch { Write-Verbose $_.Exception.Message }
 
-    # MenuComplete draws an overlay menu below the prompt; inside tmux/psmux
-    # that redraw is fragile, so Tab cycles in-place via Complete and the
-    # overlay menu moves to F12 as an explicit fallback. ShowToolTips OFF in
-    # mux for the same reason (it draws below the line too).
-    if ($inMux) {
-        try { Set-PSReadLineOption -ShowToolTips:$false -ErrorAction Stop }              catch { Write-Verbose $_.Exception.Message }
-        try { Set-PSReadLineKeyHandler -Key Tab -Function Complete -ErrorAction Stop }   catch { Write-Verbose $_.Exception.Message }
-        try { Set-PSReadLineKeyHandler -Key F12 -Function MenuComplete -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
-    } else {
-        try { Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
-    }
+    try { Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
     try { Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
     try { Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
 }

@@ -266,18 +266,22 @@ save only**. The next plain `:w` formats normally. Implemented in
   config. Install-Psmux is NOT in the `$Catalog` because scoop needs a custom
   bucket (`scoop bucket add psmux …`) — the helper does that, then falls back
   to winget / choco.
-- **psmux + PSReadLine: two coupled settings.** psmux deliberately resets
-  PSReadLine prediction settings during pane init unless `allow-predictions on`
-  is set (psmux issue #150 — fresh panes show `PredictionSource=None` even when
-  the profile asks for `HistoryAndPlugin`). Hence in `tmux.conf` we have
-  `set -gq allow-predictions on` (the `-q` lets real tmux ignore the unknown
-  option silently — shared config stays one file). Beyond that, *overlay*
-  PSReadLine features (ListView prediction, MenuComplete menu, ShowToolTips)
-  rely on cursor save/restore + multi-line redraws that ConPTY-via-psmux passes
-  through unreliably — so `shells/powershell_profile.ps1` detects `$inMux`
-  (`$env:TMUX`/`TMUX_PANE`/`TERM` ~ `tmux|screen`) and inside it uses
-  `PredictionViewStyle InlineView`, `Tab=Complete`, `F12=MenuComplete` fallback,
-  `ShowToolTips:$false`. Outside the multiplexer the richer settings stand.
+- **psmux + PSReadLine: Windows-only overlay, two settings.** psmux's default
+  shell is **cmd**, not pwsh — which is the *real* reason "history prediction"
+  and `MenuComplete` looked broken inside panes: PSReadLine was never loaded.
+  The fix is a Windows-only overlay `tmux/tmux.windows.conf`, symlinked to
+  `~/.tmux.windows.conf` by `bootstrap.ps1` and pulled in by the main
+  `tmux/tmux.conf` via `source-file -q` (silent no-op on Unix where it does not
+  exist). The overlay sets:
+  (1) `default-shell pwsh` — so fresh psmux panes spawn PowerShell 7, which
+  loads PSReadLine + the profile.
+  (2) `allow-predictions on` — psmux otherwise resets `PredictionSource` to
+  `None` during pane init (psmux issue #150 — fresh panes ignore the profile's
+  `HistoryAndPlugin`). With this on, the profile's ListView prediction +
+  `Tab=MenuComplete` survive into psmux panes.
+  Diagnose inside a pane with `(Get-Process -Id $PID).Name` (expect `pwsh`).
+  Do NOT add `set -g default-shell` to the main `tmux.conf` — `pwsh` does not
+  exist on Unix; keep Windows-specific tmux settings in the overlay.
 
 ## Login shell: zsh adoption (install-deps.sh)
 

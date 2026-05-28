@@ -31,6 +31,12 @@ Describe "bootstrap.ps1" {
         $tmux = Get-Item (Join-Path $env:USERPROFILE '.tmux.conf')
         $tmux.LinkType | Should -Be 'SymbolicLink'
         $tmux.Target  | Should -Match 'tmux\\tmux\.conf$'
+        # tmux.windows.conf -> psmux-only overlay (default-shell pwsh,
+        # allow-predictions on). Main tmux.conf sources it with `-q`, so the
+        # overlay being absent on Unix is silent.
+        $tmuxWin = Get-Item (Join-Path $env:USERPROFILE '.tmux.windows.conf')
+        $tmuxWin.LinkType | Should -Be 'SymbolicLink'
+        $tmuxWin.Target  | Should -Match 'tmux\\tmux\.windows\.conf$'
     }
 
     It "re-running is idempotent (no new backups)" {
