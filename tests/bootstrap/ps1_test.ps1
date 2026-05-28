@@ -7,10 +7,10 @@ Describe "bootstrap.ps1" {
 
     BeforeEach {
         $script:FakeHome = Join-Path ([System.IO.Path]::GetTempPath()) ("bs-" + [System.Guid]::NewGuid())
+        # LOCALAPPDATA is where lazygit reads its config from (v0.58+), and
+        # where bootstrap.ps1 symlinks lazygit/config.yml. Keep it under the
+        # FakeHome so the test sandboxes the symlink.
         $script:FakeLocalAppData = Join-Path $script:FakeHome "AppData/Local"
-        # APPDATA (Roaming) is where the lazygit config.yml is symlinked on
-        # Windows; keep it inside FakeHome so the test does not pollute the
-        # real user profile when CI runs as a logged-in account.
         $script:FakeAppData = Join-Path $script:FakeHome "AppData/Roaming"
         New-Item -ItemType Directory -Force -Path $script:FakeHome | Out-Null
         New-Item -ItemType Directory -Force -Path $script:FakeLocalAppData | Out-Null
@@ -45,10 +45,11 @@ Describe "bootstrap.ps1" {
         $tmuxWin = Get-Item (Join-Path $env:USERPROFILE '.tmux.windows.conf')
         $tmuxWin.LinkType | Should -Be 'SymbolicLink'
         $tmuxWin.Target  | Should -Match 'tmux\\tmux\.windows\.conf$'
-        # lazygit config -- carries the Alt+J/Alt+K fallback so the
-        # "move commit down/up" bindings survive the psmux ConPTY proxy
-        # (Ctrl+J degrades to Enter without Win32-input-mode relay).
-        $lazy = Get-Item (Join-Path $env:APPDATA 'lazygit/config.yml')
+        # lazygit config -- symlinked into %LOCALAPPDATA%\lazygit (where
+        # lazygit v0.58 actually reads from, NOT %APPDATA%). Carries the
+        # Alt+J/Alt+K / F7/F8 fallbacks so "move commit down/up" survives
+        # the psmux ConPTY proxy (Ctrl+J degrades to Enter there).
+        $lazy = Get-Item (Join-Path $env:LOCALAPPDATA 'lazygit/config.yml')
         $lazy.LinkType | Should -Be 'SymbolicLink'
         $lazy.Target  | Should -Match 'lazygit\\config\.yml$'
     }

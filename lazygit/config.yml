@@ -1,6 +1,11 @@
 # lazygit config -- cross-platform, symlinked into:
 #   macOS / Linux:  ~/.config/lazygit/config.yml
-#   Windows:        %APPDATA%\lazygit\config.yml
+#   Windows:        %LOCALAPPDATA%\lazygit\config.yml
+#
+# Windows path was %APPDATA% in earlier commits but lazygit v0.58 actually
+# reads from %LOCALAPPDATA% (verified via `lazygit --print-config-dir`).
+# Symlinking to the wrong path silently dropped EVERY custom keybinding,
+# which is why even F-key fallbacks looked dead inside psmux.
 #
 # Why a config file at all: under psmux (ConPTY tmux clone on Windows) the
 # default `<ctrl+j>` / `<ctrl+k>` "move commit down/up" bindings don't fire.
@@ -21,11 +26,13 @@
 # emitter); lazygit Custom_Keybindings.md (array-form binding syntax).
 keybinding:
   commits:
-    # F8/F7 are the guaranteed fallbacks: F-keys travel as raw scancodes
-    # through ConPTY/psmux with no Alt/Ctrl interpretation, so they survive
-    # even if Alt+J/K or Ctrl+J get eaten by Windows Terminal, psmux, or
-    # any layer in between. Keep the modifier-prefixed variants first
-    # because they are still the canonical lazygit keys on every other
-    # platform.
+    # Layered fallbacks. Modifier-prefixed first because they are the canonical
+    # lazygit keys on every other platform; F8/F7 last as the bare-key fallback
+    # for psmux/ConPTY combos where Alt/Ctrl get re-encoded or eaten. NOTE:
+    # F-keys are encoded escape sequences, NOT raw scancodes -- multiplexers
+    # CAN strip/alter them. If F8 still does nothing after the config landed
+    # at %LOCALAPPDATA%\lazygit, check psmux's own root bindings with
+    # `psmux list-keys -T root | rg 'F7|F8'` and add `unbind-key -n F7` etc.
+    # to tmux.windows.conf.
     moveDownCommit: [<ctrl+j>, <alt+j>, <alt+down>, <f8>]
     moveUpCommit: [<ctrl+k>, <alt+k>, <alt+up>, <f7>]

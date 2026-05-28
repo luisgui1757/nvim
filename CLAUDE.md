@@ -396,16 +396,19 @@ seams. Unset in normal runs, so it's skipped.
   U+0020, which rendered `~/Downloads`, `~/Music`, `~/Pictures` as a blank `~/`.
   The same `directory_test.sh` guards against whitespace-only values.
 - **tmux colors track the canonical rose-pine/tmux theme.** Source:
-  <https://github.com/rose-pine/tmux>, main variant. Role-based styles --
-  NOT inline `#[fg=...]` format strings -- so `window-status-format` and
-  `window-status-current-format` are explicitly unset (`setw -gu`) and tmux
-  builds the cell from `window-status-style` etc. Map: status-style
-  `fg=pine,bg=base`; window-status `fg=iris,bg=base`;
-  window-status-current `fg=gold,bg=base` (no bold); window-status-activity
-  `fg=base,bg=rose`; pane-border `fg=hl_high #524f67` /
-  pane-active-border `fg=gold`; message `fg=muted,bg=base`;
-  message-command `fg=base,bg=gold`. Status-left (iris-bold session +
-  muted separator) and status-right (foam date + gold time) are our own
+  <https://github.com/rose-pine/tmux>, main variant. Role-based styles
+  carry the colors. Map: status-style `fg=pine,bg=base`; window-status
+  `fg=iris,bg=base`; window-status-current `fg=gold,bg=base` (no bold);
+  window-status-activity `fg=base,bg=rose`; pane-border `fg=hl_high #524f67`
+  / pane-active-border `fg=gold`; message `fg=muted,bg=base`;
+  message-command `fg=base,bg=gold`. **DO** set explicit
+  `window-status-format "#I:#W#F"` and `window-status-current-format
+  "#I:#W#F"` -- tmux's DEFAULT format contains a `#{?window_flags,...}`
+  conditional that psmux v3.3.4 renders as a literal string in each cell.
+  An earlier ship that used `setw -gu window-status-format` (unset, fall
+  back to tmux default) lit that bug -- explicit `#I:#W#F` parses cleanly
+  in both real tmux and psmux. Status-left (iris-bold session + muted
+  separator) and status-right (foam date + gold time) are our own
   customizations, palette-consistent. History/rejected attempts worth not
   re-attempting:
   (1) inactive `muted #6e6a86` -- 3.4:1 contrast, failed AA, illegible;
@@ -426,20 +429,33 @@ seams. Unset in normal runs, so it's skipped.
   `space`. Both pieces are required: editorconfig controls nvim's buffer
   behavior while editing; stylua.toml controls what gets written back.
   Guarded by `invariants_test.sh` ("no tab-indented .lua").
-- **lazygit Ctrl+J / Ctrl+K need an Alt+J/K fallback under psmux.** Ctrl+J is
-  ASCII LF (0x0A) — the same byte as Enter. Disambiguating requires
-  Win32-input-mode (ConPTY DECSET 9001), modifyOtherKeys, or kitty keyboard
-  protocol. Windows Terminal sends it; lazygit's tcell/v3 decodes it; but
-  psmux v3.3.4 doesn't relay the escape, so `moveDownCommit` / `moveUpCommit`
-  silently degrade to Enter. `lazygit/config.yml` (symlinked to
-  `~/.config/lazygit/config.yml` on Unix and `%APPDATA%\lazygit\config.yml`
-  on Windows) maps both actions to the **array** `[<ctrl+j>, <alt+j>,
-  <alt+down>]` and the corresponding K-side variant — the default Ctrl+J/K
-  stays live, and Alt+letter (= ESC <letter> on the wire) is unambiguous
-  through ConPTY. Real tmux on Unix ALSO gets `extended-keys on` +
-  `extended-keys-format csi-u` + `terminal-features *:extkeys` in the main
-  `tmux.conf` so Ctrl+J is properly distinguished there; psmux ignores those
-  options as unknowns (warnings, not errors).
+- **lazygit Ctrl+J / Ctrl+K need an Alt+J/K + F8/F7 fallback under psmux,
+  AND the config must symlink into `%LOCALAPPDATA%\lazygit\`.** Two
+  separate gotchas wrapped together:
+  1. **Config path:** lazygit v0.58 reads its config from
+     `%LOCALAPPDATA%\lazygit\config.yml` (verified via `lazygit
+     --print-config-dir`), NOT `%APPDATA%\lazygit\config.yml`. An earlier
+     bootstrap.ps1 symlinked into `%APPDATA%` -- the file existed but
+     lazygit never loaded it, so EVERY custom binding (including F-key
+     fallbacks) looked dead. Bootstrap now targets LocalAppData. Asserted
+     by `tests/bootstrap/ps1_test.ps1`.
+  2. **Binding:** Ctrl+J is ASCII LF (0x0A) -- the same byte as Enter.
+     Disambiguating requires Win32-input-mode (ConPTY DECSET 9001),
+     modifyOtherKeys, or kitty keyboard protocol. Windows Terminal sends
+     it; lazygit's tcell/v3 decodes it; but psmux v3.3.4 does NOT relay
+     the escape, so default Ctrl+J degrades to Enter inside a psmux pane.
+     `lazygit/config.yml` maps `moveDownCommit` / `moveUpCommit` to the
+     **array** `[<ctrl+j>, <alt+j>, <alt+down>, <f8>]` (and K-side
+     equivalent). Modifier-prefixed first because they are canonical on
+     every other platform; F-keys last as a bare-key fallback. F-keys are
+     NOT raw scancodes (earlier note was wrong) -- they are encoded
+     escape sequences and CAN be eaten by a multiplexer. If F8 still
+     fails in psmux after the LocalAppData fix lands, check
+     `psmux list-keys -T root | rg 'F7|F8'` and add `unbind-key -n F7/F8`
+     to `tmux.windows.conf`. Real tmux on Unix gets `extended-keys on` +
+     `extended-keys-format csi-u` + `terminal-features *:extkeys` in the
+     main `tmux.conf` so Ctrl+J is distinguished there; psmux ignores
+     those options as unknowns.
 
 ## When you're about to make a change
 
