@@ -4,6 +4,7 @@
 command_timeout = 500
 add_newline = false
 
+# Modules not listed in format do not render; explicit disables are unnecessary.
 format = """
 $username\
 $directory\
@@ -122,26 +123,3 @@ style = "bg:overlay fg:pine"
 format = " [](fg:overlay)[ $symbol$environment ]($style)[](fg:overlay)"
 disabled = false
 symbol = '🅒 '
-
-# === Disabled language modules (skipped to avoid per-prompt version probes) ===
-
-[elixir]
-disabled = true
-
-[elm]
-disabled = true
-
-[haskell]
-disabled = true
-
-[java]
-disabled = true
-
-[julia]
-disabled = true
-
-[nim]
-disabled = true
-
-[scala]
-disabled = true
