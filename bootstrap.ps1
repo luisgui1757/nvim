@@ -43,20 +43,26 @@ function New-SymLink {
         }
     }
 
-    if (Test-Path -LiteralPath $Destination) {
-        $item = Get-Item -LiteralPath $Destination -Force
+    $item = Get-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
+    if ($null -ne $item) {
         if ($item.LinkType -eq 'SymbolicLink') {
             $existing = $item.Target
             if ($existing -is [array]) { $existing = $existing[0] }
-            if ($existing -eq $Source) {
+            $targetMissing = $false
+            if ($existing) {
+                $targetMissing = -not (Test-Path -LiteralPath $existing)
+            }
+            if (($existing -eq $Source) -and (-not $targetMissing)) {
                 Write-Step "ok       $Destination -> $Source"
                 return
             }
-            # Existing symlink points elsewhere -- back up the symlink itself
-            # before replacing so the prior user choice is not silently lost.
+            # Existing symlink points elsewhere or to a missing path. Back up
+            # the symlink itself before replacing so prior user choice is not
+            # silently lost.
             $backup = Get-UniqueBackupPath "$Destination.bak.$Timestamp"
+            $reason = if ($targetMissing) { "broken -> $existing" } else { "was -> $existing" }
             if ($DryRun) {
-                Write-Step "relink   $Destination (was -> $existing; backup -> $backup)"
+                Write-Step "relink   $Destination ($reason; backup -> $backup)"
                 return
             }
             Move-Item -LiteralPath $Destination -Destination $backup -Force

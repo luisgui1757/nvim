@@ -72,6 +72,21 @@ Describe "bootstrap.ps1" {
         (Get-Content -LiteralPath $bak.FullName) | Should -Be "# user content"
     }
 
+    It "broken symlink at target is backed up and replaced" {
+        $dest = Join-Path $env:LOCALAPPDATA 'nvim'
+        $missing = Join-Path $script:FakeHome 'missing-nvim-target'
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest) | Out-Null
+        New-Item -ItemType SymbolicLink -Path $dest -Target $missing | Out-Null
+
+        & $script:Bootstrap | Out-Null
+
+        $nvim = Get-Item -LiteralPath $dest -Force
+        $nvim.LinkType | Should -Be 'SymbolicLink'
+        $nvim.Target | Should -Match 'nvim$'
+        $bak = Get-ChildItem -Path (Split-Path -Parent $dest) -Filter "nvim.bak.*" | Select-Object -First 1
+        $bak | Should -Not -BeNullOrEmpty
+    }
+
     It "-DryRun changes nothing" {
         & $script:Bootstrap -DryRun | Out-Null
         Test-Path (Join-Path $env:LOCALAPPDATA 'nvim') | Should -Be $false
