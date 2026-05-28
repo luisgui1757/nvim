@@ -42,6 +42,7 @@ pre-restructure layout routed `~/.claude/settings.json` through
 ├── bootstrap.ps1          Windows installer (idempotent)
 ├── Makefile               `make test`, `make install`, `make dryrun`, `make lint`
 ├── .editorconfig          formatting rules every editor + Claude respects
+├── stylua.toml            Lua formatter style (Spaces / width 2); conform reads it
 ├── README.md              the human-facing install matrix
 └── CLAUDE.md              ← you are here
 ```
@@ -342,6 +343,15 @@ seams. Unset in normal runs, so it's skipped.
   `set -g mouse off`). User preference -- keyboard-only, no accidental
   selection/scroll behaviors stealing focus across panes. Do not "fix".
   Guarded for tmux by `tests/tmux/option_test.sh` (`check mouse off`).
+  The nvim side adds three belt-and-braces options alongside `mouse = ""`:
+  `mousescroll = "ver:0,hor:0"` + `mousefocus = false` + `mousemoveevent =
+  false`. Reason: on Windows under psmux + Windows Terminal, multiple input
+  layers can flip mouse handling on (a Lazy-loaded plugin, the `:terminal`
+  pass-through, etc.). If `mouse` ever gets flipped back to its nvim 0.11
+  default of `"nvi"`, the other three options keep wheel scroll inert,
+  prevent focus-follows-mouse, and suppress motion events. Use the
+  documented zero-count form for `mousescroll` (NOT the empty string --
+  that is not a valid value per `:h 'mousescroll'`).
 - **Arrow keys are mapped to `<Nop>`** in `vim-options.lua`. User
   preference; hjkl-only navigation enforced.
 - **`vim.opt.clipboard = "unnamedplus"`** even on macOS — works fine via
@@ -397,6 +407,16 @@ seams. Unset in normal runs, so it's skipped.
   three off, WT owns the mouse → native click+drag works, release keeps
   selection, Ctrl+Shift+C copies. Symlink-only on Windows; main `tmux.conf`
   sources the overlay with `-q` so Unix is unaffected.
+- **`stylua.toml` at repo root is load-bearing.** stylua reads ONLY its own
+  config (`stylua.toml` / `.stylua.toml`) -- it does NOT respect
+  `.editorconfig`. Its built-in defaults are `indent_type = "Tabs"` and
+  `indent_width = 4`, which conflict with the rest of the repo. Without
+  the repo-level `stylua.toml` declaring `Spaces` + `2`, conform.nvim's
+  format-on-save would re-introduce tabs on every save of every .lua file,
+  even after the `.editorconfig` flip from `indent_style = tab` to
+  `space`. Both pieces are required: editorconfig controls nvim's buffer
+  behavior while editing; stylua.toml controls what gets written back.
+  Guarded by `invariants_test.sh` ("no tab-indented .lua").
 - **lazygit Ctrl+J / Ctrl+K need an Alt+J/K fallback under psmux.** Ctrl+J is
   ASCII LF (0x0A) — the same byte as Enter. Disambiguating requires
   Win32-input-mode (ConPTY DECSET 9001), modifyOtherKeys, or kitty keyboard

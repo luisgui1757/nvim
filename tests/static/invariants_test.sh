@@ -115,6 +115,24 @@ else
     echo "ok  : no apostrophes in .ps1 comments"
 fi
 
+# Lua indentation: spaces only. stylua.toml at repo root declares Spaces+2;
+# .editorconfig [*.lua] declares space+2. If a .lua file starts a line with
+# a TAB, either stylua was bypassed (someone wrote without format-on-save)
+# or one of the two configs got reverted -- fix the cause, do not retab
+# manually. Scope: every .lua under nvim/, tests/nvim/, linux/. Portable
+# `grep -E "^<TAB>"` via printf so this passes on BSD grep (macOS) too.
+tab_pat="$(printf '^\t')"
+tab_indented_lua=$(find nvim tests/nvim linux -name '*.lua' -type f \
+    -exec grep -lE "$tab_pat" {} + 2>/dev/null || true)
+if [[ -n "$tab_indented_lua" ]]; then
+    echo "FAIL: .lua files have tab indentation (should be spaces):"
+    # shellcheck disable=SC2001
+    echo "$tab_indented_lua" | sed 's/^/  /'
+    fail=1
+else
+    echo "ok  : no tab-indented .lua"
+fi
+
 # Dead-code guards
 for dead in nvim/lua/plugins.lua nvim/lua/plugins/ai.lua nvim/lua/plugins/avante.lua nvim/lua/plugins/none-ls.lua; do
     if [[ -e "$dead" ]]; then

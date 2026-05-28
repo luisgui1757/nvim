@@ -22,5 +22,5 @@
 --   4. start it now without re-login:  devilspie2 &
 
 if get_window_class() == "com.mitchellh.ghostty" or get_application_name() == "Ghostty" then
-	maximize()
+  maximize()
 end

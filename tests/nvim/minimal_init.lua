@@ -11,9 +11,9 @@
 --     tests that ask "is vim.g.mapleader space?" see the production state.
 
 local function script_path()
-	-- debug.getinfo(1, "S").source is "@/abs/or/relative/path"
-	local src = debug.getinfo(1, "S").source:sub(2)
-	return vim.fn.resolve(vim.fn.fnamemodify(src, ":p"))
+  -- debug.getinfo(1, "S").source is "@/abs/or/relative/path"
+  local src = debug.getinfo(1, "S").source:sub(2)
+  return vim.fn.resolve(vim.fn.fnamemodify(src, ":p"))
 end
 
 local this_file = script_path()
@@ -31,11 +31,15 @@ vim.opt.runtimepath:prepend(repo_root .. "/nvim")
 -- the suite doesn't depend on a populated lazy data dir.
 local plenary_dir = repo_root .. "/tests/.cache/plenary.nvim"
 if vim.fn.isdirectory(plenary_dir) == 0 then
-	vim.fn.mkdir(vim.fn.fnamemodify(plenary_dir, ":h"), "p")
-	vim.fn.system({
-		"git", "clone", "--filter=blob:none", "--depth=1",
-		"https://github.com/nvim-lua/plenary.nvim.git", plenary_dir,
-	})
+  vim.fn.mkdir(vim.fn.fnamemodify(plenary_dir, ":h"), "p")
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "--depth=1",
+    "https://github.com/nvim-lua/plenary.nvim.git",
+    plenary_dir,
+  })
 end
 vim.opt.runtimepath:prepend(plenary_dir)
 -- Explicitly source plenary's plugin file (plain `-u` doesn't auto-source

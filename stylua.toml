@@ -1,0 +1,7 @@
+# stylua config -- repo-wide Lua formatter style.
+# stylua's defaults are Tabs / indent_width 4, which conflict with the rest
+# of the repo (and the .editorconfig [*] rule of space + size 2). Without
+# this file, conform.nvim's format-on-save would re-introduce tabs on every
+# save even after manually inserting spaces.
+indent_type = "Spaces"
+indent_width = 2

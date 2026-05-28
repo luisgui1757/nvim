@@ -1,26 +1,26 @@
 return {
-	"rose-pine/neovim",
-	name = "rose-pine",
-	lazy = false,
-	priority = 1000,
-	opts = {
-		variant = "main",
-		dark_variant = "main",
-		dim_inactive_windows = false,
-		extend_background_behind_borders = true,
-		styles = {
-			bold = true,
-			italic = false,
-			transparency = true,
-		},
-		groups = {
-			border = "muted",
-			link = "iris",
-			panel = "surface",
-		},
-	},
-	config = function(_, opts)
-		require("rose-pine").setup(opts)
-		vim.cmd.colorscheme("rose-pine")
-	end,
+  "rose-pine/neovim",
+  name = "rose-pine",
+  lazy = false,
+  priority = 1000,
+  opts = {
+    variant = "main",
+    dark_variant = "main",
+    dim_inactive_windows = false,
+    extend_background_behind_borders = true,
+    styles = {
+      bold = true,
+      italic = false,
+      transparency = true,
+    },
+    groups = {
+      border = "muted",
+      link = "iris",
+      panel = "surface",
+    },
+  },
+  config = function(_, opts)
+    require("rose-pine").setup(opts)
+    vim.cmd.colorscheme("rose-pine")
+  end,
 }
