@@ -113,6 +113,10 @@ stable tarball into `/opt/nvim-linux-<arch>` (`x86_64` or `arm64`) and symlinks
 `/usr/local/bin/nvim`. That avoids distro packages that lag below this config's
 Neovim 0.11+ floor.
 
+On macOS, Phase 1 installs Ghostty through `brew install --cask ghostty` when
+selected. Linux keeps the Linux-specific brew HEAD / snap / manual install
+paths because Ghostty is not packaged uniformly there.
+
 Phase 1 also **prompts for your notes / Obsidian vault path** and persists it as
 `export NOTES_VAULT=…` in `~/.zshrc.local` (gitignored, sourced by `zshrc`), so
 obsidian.nvim opens that vault. Blank answer = an OS-appropriate default. The

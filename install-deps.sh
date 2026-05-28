@@ -442,6 +442,22 @@ install_nvim_linux() {
     printf "  installed %-26s -> %s/bin/nvim\n" "nvim" "$install_dir"
 }
 
+install_ghostty_macos() {
+    if have ghostty; then
+        printf "  ok        %-26s already installed\n" "ghostty"
+        return
+    fi
+    if ! ask "Install ghostty (macOS terminal) via Homebrew cask?"; then
+        printf "  skipped   %-26s\n" "ghostty"
+        return
+    fi
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        echo "  would: brew install --cask ghostty"
+        return
+    fi
+    brew install --cask ghostty || echo "  WARN: ghostty cask install failed"
+}
+
 # Test seam: `INSTALL_DEPS_SOURCE_ONLY=1 source install-deps.sh` defines the
 # functions above (so tests/shell/default_shell_test.sh can exercise the
 # login-shell decision logic) WITHOUT running any package installs.
@@ -838,7 +854,7 @@ set_default_shell_zsh   # make zsh the login shell so tmux/terminals launch it
 
 section "terminals (optional)"
 if [[ "$(uname -s)" == "Darwin" ]] && [[ "$PM" == "brew" ]]; then
-    install ghostty "macOS terminal, our daily driver"
+    install_ghostty_macos
 elif [[ "$(uname -s)" == "Linux" ]]; then
     install_ghostty_linux
 fi
