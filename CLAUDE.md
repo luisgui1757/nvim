@@ -24,6 +24,11 @@ pre-restructure layout routed `~/.claude/settings.json` through
 `~/.config/nvim/claude/` — that indirection is deprecated; bootstrap now links
 `claude/` directly.)
 
+Claude Code permissions are intentionally portable. `claude/settings.json`
+keeps generic command patterns and a short WebFetch domain list only; do not
+sync project-specific allowlist entries or set `skipDangerousModePermissionPrompt`
+/ `skipAutoPermissionPrompt` to `true`.
+
 ## Layout at a glance
 
 ```

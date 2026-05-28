@@ -115,6 +115,13 @@ else
     echo "ok  : no apostrophes in .ps1 comments"
 fi
 
+if grep -Eq '"(skipDangerousModePermissionPrompt|skipAutoPermissionPrompt)"[[:space:]]*:[[:space:]]*true' claude/settings.json; then
+    echo "FAIL: claude/settings.json must not skip permission prompts"
+    fail=1
+else
+    echo "ok  : Claude permission prompts are not skipped"
+fi
+
 # Lua indentation: spaces only. stylua.toml at repo root declares Spaces+2;
 # .editorconfig [*.lua] declares space+2. If a .lua file starts a line with
 # a TAB, either stylua was bypassed (someone wrote without format-on-save)
