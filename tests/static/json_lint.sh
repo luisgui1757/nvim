@@ -2,17 +2,20 @@
 # Validate every JSON / JSONC file in the repo.
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+CACHE_DIR="$REPO_ROOT/tests/.cache"
+mkdir -p "$CACHE_DIR"
+err=$(mktemp "$CACHE_DIR/json-lint.XXXXXX")
+trap 'rm -f "$err"' EXIT
 
 # Standard JSON files: lazy-lock.json, claude/settings.json, etc.
 json_files=$(find "$REPO_ROOT" -type f -name "*.json" -not -path "*/.git/*" -not -name "*.tmp")
 if command -v jq >/dev/null 2>&1; then
     fail=0
     for f in $json_files; do
-        if ! jq empty "$f" 2>err; then
-            echo "FAIL: $f"; cat err; fail=1
+        if ! jq empty "$f" 2>"$err"; then
+            echo "FAIL: $f"; cat "$err"; fail=1
         fi
     done
-    [[ -e err ]] && rm err
     [[ "$fail" -ne 0 ]] && exit 1
 else
     echo "skipped json: jq not installed"
@@ -23,12 +26,11 @@ jsonc_files=$(find "$REPO_ROOT" -type f -name "*.jsonc" -not -path "*/.git/*")
 if command -v jq >/dev/null 2>&1; then
     fail=0
     for f in $jsonc_files; do
-        # Strip both // line comments and /* block */ comments before parsing.
-        if ! sed -E 's|//[^"]*$||g' "$f" | jq empty 2>err; then
-            echo "FAIL (jsonc): $f"; cat err; fail=1
+        # Strip // line comments before parsing.
+        if ! sed -E 's|//[^"]*$||g' "$f" | jq empty 2>"$err"; then
+            echo "FAIL (jsonc): $f"; cat "$err"; fail=1
         fi
     done
-    [[ -e err ]] && rm err
     [[ "$fail" -ne 0 ]] && exit 1
 fi
 
