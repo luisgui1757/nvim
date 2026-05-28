@@ -374,6 +374,17 @@ seams. Unset in normal runs, so it's skipped.
   become a bare space** — an earlier encoding pass stripped three of these to
   U+0020, which rendered `~/Downloads`, `~/Music`, `~/Pictures` as a blank `~/`.
   The same `directory_test.sh` guards against whitespace-only values.
+- **tmux status hierarchy is hue + bg-block + weight, NOT contrast.** Inactive
+  windows are `iris #c4a7e7` (cool), active is `gold #f6c177 bold` on `bg=overlay
+  #26233a` (warm block on cool row). I tried fixing readability complaints by
+  bumping inactive contrast three times (`muted #6e6a86` → `subtle #908caa` →
+  `text #e0def4`) — all wrong: contrast alone made the bar legible but flat, with
+  no visual hierarchy. The real lever was hue separation + a bg-block on active.
+  Do NOT "fix" iris-on-base back to text or revert the active overlay block. Also
+  don't switch to `dim` for the inactive — it's terminal/ConPTY-flaky and re-creates
+  the legibility problem under psmux. (Codex 5.5 xhigh audit, 2026-05; pane
+  borders also bumped overlay→muted so they're actually visible at 3.4:1
+  instead of 1.16:1.)
 
 ## When you're about to make a change
 
