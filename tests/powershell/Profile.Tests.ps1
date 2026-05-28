@@ -42,6 +42,14 @@ Describe "PowerShell profile" {
         $src | Should -Not -Match 'function Ensure-StarshipInitScript'
     }
 
+    It "checks UserInteractive before host-name refinement" {
+        $src = Get-Content -Raw -LiteralPath $script:Profile
+        $userInteractiveIndex = $src.IndexOf('[Environment]::UserInteractive')
+        $hostNameIndex = $src.IndexOf('$Host.Name')
+        $userInteractiveIndex | Should -BeGreaterOrEqual 0
+        $hostNameIndex | Should -BeGreaterThan $userInteractiveIndex
+    }
+
     It "writes the starship init cache with UTF8 encoding" {
         $src = Get-Content -Raw -LiteralPath $script:Profile
         $src | Should -Match 'Set-Content[^|]*-Encoding\s+UTF8'

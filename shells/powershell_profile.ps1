@@ -11,10 +11,10 @@
 # When in doubt, do nothing -- the prompt UX has zero value in those cases.
 $interactive = $true
 try {
-    if ($Host.Name -notin @('ConsoleHost', 'Visual Studio Code Host', 'Windows PowerShell ISE Host')) {
+    if (-not [Environment]::UserInteractive) {
         $interactive = $false
     }
-    if (-not [Environment]::UserInteractive) {
+    if ($interactive -and $Host.Name -notin @('ConsoleHost', 'Visual Studio Code Host', 'Windows PowerShell ISE Host')) {
         $interactive = $false
     }
 } catch {
