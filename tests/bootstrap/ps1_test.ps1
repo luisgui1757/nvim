@@ -8,18 +8,26 @@ Describe "bootstrap.ps1" {
     BeforeEach {
         $script:FakeHome = Join-Path ([System.IO.Path]::GetTempPath()) ("bs-" + [System.Guid]::NewGuid())
         $script:FakeLocalAppData = Join-Path $script:FakeHome "AppData/Local"
+        # APPDATA (Roaming) is where the lazygit config.yml is symlinked on
+        # Windows; keep it inside FakeHome so the test does not pollute the
+        # real user profile when CI runs as a logged-in account.
+        $script:FakeAppData = Join-Path $script:FakeHome "AppData/Roaming"
         New-Item -ItemType Directory -Force -Path $script:FakeHome | Out-Null
         New-Item -ItemType Directory -Force -Path $script:FakeLocalAppData | Out-Null
+        New-Item -ItemType Directory -Force -Path $script:FakeAppData | Out-Null
 
         $script:OldUserProfile  = $env:USERPROFILE
         $script:OldLocalAppData = $env:LOCALAPPDATA
+        $script:OldAppData      = $env:APPDATA
         $env:USERPROFILE = $script:FakeHome
         $env:LOCALAPPDATA = $script:FakeLocalAppData
+        $env:APPDATA = $script:FakeAppData
     }
 
     AfterEach {
         $env:USERPROFILE = $script:OldUserProfile
         $env:LOCALAPPDATA = $script:OldLocalAppData
+        $env:APPDATA = $script:OldAppData
         Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $script:FakeHome
     }
 
@@ -32,11 +40,17 @@ Describe "bootstrap.ps1" {
         $tmux.LinkType | Should -Be 'SymbolicLink'
         $tmux.Target  | Should -Match 'tmux\\tmux\.conf$'
         # tmux.windows.conf -> psmux-only overlay (default-shell pwsh,
-        # allow-predictions on). Main tmux.conf sources it with `-q`, so the
-        # overlay being absent on Unix is silent.
+        # allow-predictions on, mouse-selection off). Main tmux.conf sources
+        # it with `-q`, so the overlay being absent on Unix is silent.
         $tmuxWin = Get-Item (Join-Path $env:USERPROFILE '.tmux.windows.conf')
         $tmuxWin.LinkType | Should -Be 'SymbolicLink'
         $tmuxWin.Target  | Should -Match 'tmux\\tmux\.windows\.conf$'
+        # lazygit config -- carries the Alt+J/Alt+K fallback so the
+        # "move commit down/up" bindings survive the psmux ConPTY proxy
+        # (Ctrl+J degrades to Enter without Win32-input-mode relay).
+        $lazy = Get-Item (Join-Path $env:APPDATA 'lazygit/config.yml')
+        $lazy.LinkType | Should -Be 'SymbolicLink'
+        $lazy.Target  | Should -Match 'lazygit\\config\.yml$'
     }
 
     It "re-running is idempotent (no new backups)" {
@@ -68,10 +82,16 @@ Describe "bootstrap.ps1 -MergeWindowsTerminal" {
     BeforeEach {
         $script:FakeHome = Join-Path ([System.IO.Path]::GetTempPath()) ("bs-wt-" + [System.Guid]::NewGuid())
         $script:FakeLocalAppData = Join-Path $script:FakeHome "AppData/Local"
+        # APPDATA (Roaming) -- bootstrap.ps1 always runs the link block, which
+        # symlinks lazygit\config.yml under %APPDATA%. Confine that to FakeHome
+        # so -MergeWindowsTerminal runs do not pollute the real user profile.
+        $script:FakeAppData = Join-Path $script:FakeHome "AppData/Roaming"
         $script:WTPackageDir = Join-Path $script:FakeLocalAppData "Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState"
         New-Item -ItemType Directory -Force -Path $script:WTPackageDir | Out-Null
+        New-Item -ItemType Directory -Force -Path $script:FakeAppData | Out-Null
         $env:LOCALAPPDATA = $script:FakeLocalAppData
         $env:USERPROFILE = $script:FakeHome
+        $env:APPDATA = $script:FakeAppData
         $script:WTSettings = Join-Path $script:WTPackageDir "settings.json"
     }
 

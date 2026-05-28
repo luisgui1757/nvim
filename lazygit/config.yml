@@ -1,0 +1,25 @@
+# lazygit config -- cross-platform, symlinked into:
+#   macOS / Linux:  ~/.config/lazygit/config.yml
+#   Windows:        %APPDATA%\lazygit\config.yml
+#
+# Why a config file at all: under psmux (ConPTY tmux clone on Windows) the
+# default `<ctrl+j>` / `<ctrl+k>` "move commit down/up" bindings don't fire.
+# Ctrl+J is ASCII LF (0x0A) -- the same byte as Enter -- so the wire needs
+# Win32-input-mode (DECSET 9001), modifyOtherKeys, or the kitty keyboard
+# protocol to disambiguate. Windows Terminal supports Win32-input-mode and
+# lazygit's tcell/v3 can decode it, but psmux v3.3.4 does not relay the
+# escape sequence through to the inner app, so lazygit just sees Enter.
+#
+# Fix: keep the default Ctrl+J/K bindings AND add Alt+J/K + Alt+Down/Up
+# fallbacks. Alt+letter is the old Meta/ESC-prefix path (sent as ESC <letter>
+# on the wire) and is unambiguous everywhere -- including through ConPTY +
+# psmux. The default bindings stay live, so on Unix tmux (where extended-keys
+# in tmux.conf relays modifyOtherKeys) Ctrl+J/K still works as expected.
+#
+# Source: psmux configuration docs (no extended-keys/Win32-input-mode support
+# documented for v3.3.4); Microsoft Terminal VtIo.cpp (Win32-input-mode
+# emitter); lazygit Custom_Keybindings.md (array-form binding syntax).
+keybinding:
+  commits:
+    moveDownCommit: [<ctrl+j>, <alt+j>, <alt+down>]
+    moveUpCommit: [<ctrl+k>, <alt+k>, <alt+up>]

@@ -25,6 +25,9 @@ run_bootstrap() {
     [ "$(readlink "$FAKE_HOME/.config/starship.toml")" = "$REPO_ROOT/starship/starship.toml" ]
     [ -L "$FAKE_HOME/.tmux.conf" ]
     [ -L "$FAKE_HOME/.zshrc" ]
+    # lazygit config -- carries the Ctrl+J/Alt+J binding fallback for psmux.
+    [ -L "$FAKE_HOME/.config/lazygit/config.yml" ]
+    [ "$(readlink "$FAKE_HOME/.config/lazygit/config.yml")" = "$REPO_ROOT/lazygit/config.yml" ]
 }
 
 @test "fresh install links Claude Code settings from repo-root claude/" {
@@ -104,6 +107,7 @@ run_bootstrap() {
     [ ! -e "$FAKE_HOME/.config/nvim" ]
     [ ! -e "$FAKE_HOME/.tmux.conf" ]
     [ ! -e "$FAKE_HOME/.zshrc" ]
+    [ ! -e "$FAKE_HOME/.config/lazygit/config.yml" ]
 }
 
 @test "missing git aborts with a clear error" {

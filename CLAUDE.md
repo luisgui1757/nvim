@@ -35,6 +35,7 @@ pre-restructure layout routed `~/.claude/settings.json` through
 ├── ghostty/               config (Rose Pine, Hack Nerd, tuned for tmux)
 ├── windows-terminal/      settings.fragment.jsonc + merge README
 ├── claude/                Claude Code per-user settings (cross-machine sync)
+├── lazygit/               config.yml (Ctrl+J/K binding + Alt+J/K fallbacks for psmux)
 ├── tests/                 automated tests, grouped by tool
 ├── .github/workflows/     CI matrix: ubuntu / macos / windows
 ├── bootstrap.sh           macOS/Linux/WSL installer (idempotent)
@@ -385,6 +386,31 @@ seams. Unset in normal runs, so it's skipped.
   the legibility problem under psmux. (Codex 5.5 xhigh audit, 2026-05; pane
   borders also bumped overlay→muted so they're actually visible at 3.4:1
   instead of 1.16:1.)
+- **psmux `mouse-selection` is SEPARATE from tmux's `mouse` option.** `set -g
+  mouse off` only disables tmux's mouse mode (pane resize, etc.); psmux has its
+  own client-side drag-selection layer (`mouse-selection`, default `on`,
+  issue #245) that paints a selection while the button is held and clears it
+  on release — which looked like "Windows Terminal selection is broken in
+  psmux" but was actually psmux owning the mouse and not WT. The fix is in
+  `tmux/tmux.windows.conf`: `set -g mouse-selection off` + `set -g
+  pwsh-mouse-selection off` + `set -g scroll-enter-copy-mode off`. With those
+  three off, WT owns the mouse → native click+drag works, release keeps
+  selection, Ctrl+Shift+C copies. Symlink-only on Windows; main `tmux.conf`
+  sources the overlay with `-q` so Unix is unaffected.
+- **lazygit Ctrl+J / Ctrl+K need an Alt+J/K fallback under psmux.** Ctrl+J is
+  ASCII LF (0x0A) — the same byte as Enter. Disambiguating requires
+  Win32-input-mode (ConPTY DECSET 9001), modifyOtherKeys, or kitty keyboard
+  protocol. Windows Terminal sends it; lazygit's tcell/v3 decodes it; but
+  psmux v3.3.4 doesn't relay the escape, so `moveDownCommit` / `moveUpCommit`
+  silently degrade to Enter. `lazygit/config.yml` (symlinked to
+  `~/.config/lazygit/config.yml` on Unix and `%APPDATA%\lazygit\config.yml`
+  on Windows) maps both actions to the **array** `[<ctrl+j>, <alt+j>,
+  <alt+down>]` and the corresponding K-side variant — the default Ctrl+J/K
+  stays live, and Alt+letter (= ESC <letter> on the wire) is unambiguous
+  through ConPTY. Real tmux on Unix ALSO gets `extended-keys on` +
+  `extended-keys-format csi-u` + `terminal-features *:extkeys` in the main
+  `tmux.conf` so Ctrl+J is properly distinguished there; psmux ignores those
+  options as unknowns (warnings, not errors).
 
 ## When you're about to make a change
 

@@ -210,6 +210,13 @@ $claudeDir = Join-Path $env:USERPROFILE '.claude'
 New-SymLink -Source (Join-Path $RepoRoot 'claude\settings.json')         -Destination (Join-Path $claudeDir 'settings.json')
 New-SymLink -Source (Join-Path $RepoRoot 'claude\statusline-command.sh') -Destination (Join-Path $claudeDir 'statusline-command.sh')
 
+# lazygit config -- %APPDATA%\lazygit\config.yml on Windows. Carries the
+# Alt+J / Alt+K fallbacks for "move commit down/up" so lazygit is usable
+# inside psmux panes (psmux does not relay Win32-input-mode, so Ctrl+J
+# degrades to Enter; the Alt aliases survive ConPTY untouched).
+$lazygitDir = Join-Path $env:APPDATA 'lazygit'
+New-SymLink -Source (Join-Path $RepoRoot 'lazygit\config.yml') -Destination (Join-Path $lazygitDir 'config.yml')
+
 # Optional: WSL Ubuntu access -- symlinks inside WSL handled by bootstrap.sh.
 
 # ---- Optional WT fragment merge ----------------------------------------------

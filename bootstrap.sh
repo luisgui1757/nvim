@@ -186,6 +186,10 @@ link "${REPO_ROOT}/shells/zshrc"        "${HOME}/.zshrc"
 # link() creates ~/.claude/ if absent and backs up any prior file/symlink.
 link "${REPO_ROOT}/claude/settings.json"         "${HOME}/.claude/settings.json"
 link "${REPO_ROOT}/claude/statusline-command.sh" "${HOME}/.claude/statusline-command.sh"
+# lazygit config -- XDG path on macOS/Linux. Carries the Ctrl+J/Alt+J
+# "move commit down" binding workaround for psmux on Windows (harmless
+# on Unix tmux where the default Ctrl+J already works).
+link "${REPO_ROOT}/lazygit/config.yml" "${HOME}/.config/lazygit/config.yml"
 
 # ---- OS-specific links -------------------------------------------------------
 case "$OS" in
