@@ -54,50 +54,10 @@ function Install-Scoop {
 # Ask early -- needed by the catalog logic below.
 function Ask {
     param([string]$prompt)
-    if ($All) { return $true }
+    if ($All -or $DryRun) { return $true }
     $resp = Read-Host "  $prompt [Y/n]"
     if ([string]::IsNullOrWhiteSpace($resp)) { return $true }
     return ($resp -match '^[Yy]')
-}
-
-$Pm = Get-AvailablePM
-
-# If no package manager at all, try scoop first (no admin required).
-if (-not $Pm) {
-    Write-Warning "No package manager detected (winget / choco / scoop)."
-    if (Install-Scoop) { $Pm = Get-AvailablePM }
-}
-
-# Even when winget/choco are available, scoop unlocks extras
-# (taplo, win32yank, nerd-fonts bucket). Offer it as a complement.
-if ($Pm -and -not (Get-Command scoop -ErrorAction SilentlyContinue)) {
-    Write-Host ""
-    Write-Host "Detected $Pm. Scoop is also recommended -- it carries taplo,"
-    Write-Host "win32yank, and the nerd-fonts bucket that $Pm does not have."
-    Install-Scoop | Out-Null
-}
-
-Write-Host ""
-Write-Host ("install-deps: primary PM=$Pm  scoop=" + [bool](Get-Command scoop -ErrorAction SilentlyContinue) + "  dry-run=$DryRun  yes-all=$All")
-Write-Host ""
-
-if (-not $Pm) {
-    Write-Warning "No supported package manager available. Install winget from the"
-    Write-Warning "Microsoft Store ('App Installer'), or accept the Scoop offer above."
-    exit 1
-}
-
-# One-shot "install everything" vs per-item prompts. Skipped when -All / -DryRun
-# was passed or the session is non-interactive. Enter / Y == everything.
-if ((-not $All) -and (-not $DryRun) -and [Environment]::UserInteractive) {
-    $resp = Read-Host "Install EVERYTHING without further prompts? [Y/n]  (n = choose per tool)"
-    if ($resp -match '^[Nn]') {
-        Write-Host "  -> per-item prompts"
-    } else {
-        $All = $true
-        Write-Host "  -> installing everything; no further prompts"
-    }
-    Write-Host ""
 }
 
 # ---- Per-tool: package id per PM. Empty string means "not available there". --
@@ -383,6 +343,48 @@ function Install-Psmux {
     }
     Write-Warning "psmux install failed across managers; see https://github.com/psmux/psmux"
     $script:InstallFailures += [pscustomobject]@{ Tool='psmux'; Pm='scoop/winget/choco'; Pkg='psmux'; ExitCode=$LASTEXITCODE }
+}
+
+if ($env:INSTALL_DEPS_PS1_SOURCE_ONLY) { return }
+
+$Pm = Get-AvailablePM
+
+# If no package manager at all, try scoop first (no admin required).
+if (-not $Pm) {
+    Write-Warning "No package manager detected (winget / choco / scoop)."
+    if (Install-Scoop) { $Pm = Get-AvailablePM }
+}
+
+# Even when winget/choco are available, scoop unlocks extras
+# (taplo, win32yank, nerd-fonts bucket). Offer it as a complement.
+if ($Pm -and -not (Get-Command scoop -ErrorAction SilentlyContinue)) {
+    Write-Host ""
+    Write-Host "Detected $Pm. Scoop is also recommended -- it carries taplo,"
+    Write-Host "win32yank, and the nerd-fonts bucket that $Pm does not have."
+    Install-Scoop | Out-Null
+}
+
+Write-Host ""
+Write-Host ("install-deps: primary PM=$Pm  scoop=" + [bool](Get-Command scoop -ErrorAction SilentlyContinue) + "  dry-run=$DryRun  yes-all=$All")
+Write-Host ""
+
+if (-not $Pm) {
+    Write-Warning "No supported package manager available. Install winget from the"
+    Write-Warning "Microsoft Store ('App Installer'), or accept the Scoop offer above."
+    exit 1
+}
+
+# One-shot "install everything" vs per-item prompts. Skipped when -All / -DryRun
+# was passed or the session is non-interactive. Enter / Y == everything.
+if ((-not $All) -and (-not $DryRun) -and [Environment]::UserInteractive) {
+    $resp = Read-Host "Install EVERYTHING without further prompts? [Y/n]  (n = choose per tool)"
+    if ($resp -match '^[Nn]') {
+        Write-Host "  -> per-item prompts"
+    } else {
+        $All = $true
+        Write-Host "  -> installing everything; no further prompts"
+    }
+    Write-Host ""
 }
 
 function Section { param([string]$title) Write-Host ""; Write-Host "== $title ==" }
