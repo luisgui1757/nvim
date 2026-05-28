@@ -282,6 +282,18 @@ save only**. The next plain `:w` formats normally. Implemented in
   Diagnose inside a pane with `(Get-Process -Id $PID).Name` (expect `pwsh`).
   Do NOT add `set -g default-shell` to the main `tmux.conf` — `pwsh` does not
   exist on Unix; keep Windows-specific tmux settings in the overlay.
+- **psmux residual race (v3.3.4): `OnIdle` workaround in the profile.** Even
+  with `allow-predictions on`, fresh psmux panes were observed at
+  `PredictionSource=None` / `PredictionViewStyle=InlineView` -- the documented
+  psmux init resets PSReadLine **after** `$PROFILE` finishes (issue #150). The
+  user-visible "calling pwsh inside psmux fixes it" trick works because the
+  nested pwsh re-runs `$PROFILE` after psmux is done. Same idea, done
+  automatically: `shells/powershell_profile.ps1` registers a one-shot
+  `PowerShell.OnIdle` (gated on `$env:TMUX`) that re-applies
+  `HistoryAndPlugin`/`ListView` + `Tab=MenuComplete` (+ `ShowToolTips` when the
+  parameter exists, PSReadLine ≥ 2.3.4). Microsoft + psmux #150 both point at
+  `OnIdle` as the right hook. Drop it once a psmux release fixes the residual
+  race upstream (no PR yet; track issue #150 / #165).
 
 ## Login shell: zsh adoption (install-deps.sh)
 

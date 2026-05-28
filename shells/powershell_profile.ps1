@@ -134,4 +134,30 @@ if (Get-Module -ListAvailable PSReadLine) {
     try { Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
     try { Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
     try { Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward -ErrorAction Stop } catch { Write-Verbose $_.Exception.Message }
+
+    # psmux residual race-fix (issue #150 / v3.3.4): psmux resets
+    # PredictionSource to None during pane init, AFTER our profile sets
+    # HistoryAndPlugin. Even with allow-predictions on in tmux.windows.conf the
+    # race can still bite -- confirmed via Get-PSReadLineOption showing
+    # None/InlineView in a fresh pane. Re-apply our settings on the first idle
+    # (PowerShell.OnIdle fires ~300 ms after the prompt is ready, by which time
+    # psmux has finished its pane init). One-shot, gated on TMUX so it only
+    # fires inside the multiplexer; outside, the up-front settings already win.
+    if ($env:TMUX) {
+        $null = Register-EngineEvent -SourceIdentifier PowerShell.OnIdle -MaxTriggerCount 1 -Action {
+            $psrl = Get-Module PSReadLine
+            if ($psrl -and $psrl.Version -ge [Version]'2.2.0') {
+                Set-PSReadLineOption -PredictionSource HistoryAndPlugin -ErrorAction SilentlyContinue
+                Set-PSReadLineOption -PredictionViewStyle ListView      -ErrorAction SilentlyContinue
+            } elseif ($psrl -and $psrl.Version -ge [Version]'2.1.0') {
+                Set-PSReadLineOption -PredictionSource History          -ErrorAction SilentlyContinue
+            }
+            # ShowToolTips landed in PSReadLine 2.3.4; only set it when present.
+            $sop = Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue
+            if ($sop -and $sop.Parameters.ContainsKey('ShowToolTips')) {
+                Set-PSReadLineOption -ShowToolTips -ErrorAction SilentlyContinue
+            }
+            Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete -ErrorAction SilentlyContinue
+        }
+    }
 }
