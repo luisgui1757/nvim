@@ -140,7 +140,7 @@ The palette is **one constant set** used everywhere. Keep it consistent:
 overlay  #26233a   love    #eb6f92   gold    #f6c177
 rose     #ebbcba   pine    #31748f   foam    #9ccfd8
 iris     #c4a7e7   base    #191724   surface #1f1d2e
-muted    #6e6a86   text    #e0def4
+muted    #6e6a86   subtle  #908caa   text    #e0def4
 ```
 
 Surfaces that consume these: nvim (rose-pine plugin defaults), lualine
