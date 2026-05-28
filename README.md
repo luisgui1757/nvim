@@ -6,7 +6,7 @@
 | **Starship**     | `~/.config/starship.toml` → `starship/starship.toml` | same                       | `%USERPROFILE%\.config\starship.toml` → `starship\starship.toml` |
 | **zsh**          | `~/.zshrc` → `shells/zshrc`                       | same                            | n/a                                                           |
 | **PowerShell**   | `$PROFILE` → `shells/powershell_profile.ps1` (via pwsh, optional) | same       | `$PROFILE` → `shells\powershell_profile.ps1`                  |
-| **tmux**         | `~/.tmux.conf` → `tmux/tmux.conf`                 | same                            | (WSL only)                                                    |
+| **tmux**         | `~/.tmux.conf` → `tmux/tmux.conf`                 | same                            | `%USERPROFILE%\.tmux.conf` → `tmux\tmux.conf` (read by **psmux** — native Windows tmux); also via WSL |
 | **Ghostty**      | `~/Library/Application Support/com.mitchellh.ghostty/config` → `ghostty/config` | `~/.config/ghostty/config` → `ghostty/config` | n/a (Ghostty not on Windows yet) |
 | **Windows Terminal** | n/a                                           | n/a                             | merge `windows-terminal/settings.fragment.jsonc` (see that dir's README)  |
 | **Claude Code**  | `~/.claude/settings.json` → `claude/settings.json`, `~/.claude/statusline-command.sh` → `claude/statusline-command.sh` | same | `%USERPROFILE%\.claude\settings.json` → `claude\settings.json` (statusline needs Git-Bash/WSL) |

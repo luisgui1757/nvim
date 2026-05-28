@@ -256,6 +256,16 @@ save only**. The next plain `:w` formats normally. Implemented in
   `~/.config/autostart/devilspie2.desktop`. It lives in install-deps (installs a
   package + runs a daemon), NOT bootstrap (pure-symlink); Wayland needs a GNOME
   Shell extension instead. Guarded by `tests/shell/devilspie2_test.sh`.
+- **psmux is the Windows tmux** (`install-deps.ps1` → `Install-Psmux`). Picked
+  because it **reads `~/.tmux.conf`** and speaks the tmux command language, so
+  Windows reuses the *same* `tmux/tmux.conf` we maintain for Unix — one source
+  of truth, Rose Pine carries over, no parallel config. `bootstrap.ps1` symlinks
+  `tmux\tmux.conf` to `%USERPROFILE%\.tmux.conf` (mirrors the Unix
+  `~/.tmux.conf` link). If the Unix-shaped `if-shell` clipboard block ever
+  chokes under ConPTY on a given machine, guard that block rather than fork the
+  config. Install-Psmux is NOT in the `$Catalog` because scoop needs a custom
+  bucket (`scoop bucket add psmux …`) — the helper does that, then falls back
+  to winget / choco.
 
 ## Login shell: zsh adoption (install-deps.sh)
 

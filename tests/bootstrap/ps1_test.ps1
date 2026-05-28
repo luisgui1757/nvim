@@ -27,6 +27,10 @@ Describe "bootstrap.ps1" {
         & $script:Bootstrap | Out-Null
         $nvim = Get-Item (Join-Path $env:LOCALAPPDATA 'nvim')
         $nvim.LinkType | Should -Be 'SymbolicLink'
+        # tmux.conf -> the shared tmux config; psmux reads it on the Windows side
+        $tmux = Get-Item (Join-Path $env:USERPROFILE '.tmux.conf')
+        $tmux.LinkType | Should -Be 'SymbolicLink'
+        $tmux.Target  | Should -Match 'tmux\\tmux\.conf$'
     }
 
     It "re-running is idempotent (no new backups)" {

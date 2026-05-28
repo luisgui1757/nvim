@@ -138,6 +138,7 @@ $BinaryName = @{
     hyperfine   = 'hyperfine'
     taplo       = 'taplo'
     code        = 'code'
+    psmux       = 'psmux'
 }
 
 function Test-Tool {
@@ -339,6 +340,51 @@ function Install-VSCodeRosePine {
     Set-VSCodeTheme
 }
 
+# ---- psmux: native Windows tmux (reads our existing tmux/tmux.conf) ---------
+# Symmetrical with the Unix tmux story. scoop is preferred (one custom bucket,
+# then a normal install); falls back to winget then choco. Not in the catalog
+# because the scoop install needs a bucket-add first, which Install-One does not.
+function Install-Psmux {
+    if (Test-Tool 'psmux') {
+        Write-Host ("  ok        {0,-26} already installed" -f "psmux")
+        return
+    }
+    if (-not (Ask "Install psmux (native Windows tmux; reads our tmux.conf)?")) {
+        Write-Host ("  skipped   {0,-26}" -f "psmux")
+        return
+    }
+    if ($DryRun) {
+        Write-Host "  would: scoop bucket add psmux https://github.com/psmux/scoop-psmux; scoop install psmux  (fallback: winget / choco)"
+        return
+    }
+    if (Get-Command scoop -ErrorAction SilentlyContinue) {
+        scoop bucket add psmux https://github.com/psmux/scoop-psmux 2>$null | Out-Null
+        scoop install psmux
+        if ($LASTEXITCODE -eq 0 -and (Test-Tool 'psmux')) {
+            Write-Host ("  installed {0,-26} via scoop" -f "psmux")
+            return
+        }
+        Write-Warning "scoop install of psmux failed; trying winget..."
+    }
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        winget install psmux --accept-source-agreements --accept-package-agreements --silent
+        if ($LASTEXITCODE -eq 0 -and (Test-Tool 'psmux')) {
+            Write-Host ("  installed {0,-26} via winget" -f "psmux")
+            return
+        }
+        Write-Warning "winget install of psmux failed; trying choco..."
+    }
+    if (Get-Command choco -ErrorAction SilentlyContinue) {
+        choco install psmux -y
+        if ($LASTEXITCODE -eq 0 -and (Test-Tool 'psmux')) {
+            Write-Host ("  installed {0,-26} via choco" -f "psmux")
+            return
+        }
+    }
+    Write-Warning "psmux install failed across managers; see https://github.com/psmux/psmux"
+    $script:InstallFailures += [pscustomobject]@{ Tool='psmux'; Pm='scoop/winget/choco'; Pkg='psmux'; ExitCode=$LASTEXITCODE }
+}
+
 function Section { param([string]$title) Write-Host ""; Write-Host "== $title ==" }
 
 # ---- Sections ----------------------------------------------------------------
@@ -351,6 +397,9 @@ Install-One fd
 
 Section "prompt"
 Install-One starship
+
+Section "terminal multiplexer (psmux: tmux for native Windows, optional)"
+Install-Psmux
 
 Section "modern shell (optional, you can stay on Windows PowerShell 5.1)"
 Install-One pwsh
