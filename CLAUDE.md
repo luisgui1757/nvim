@@ -257,7 +257,8 @@ save only**. The next plain `:w` formats normally. Implemented in
 - **Direct GitHub downloads are pinned and SHA-256 verified.** `install-deps.sh`
   verifies the pinned Neovim Linux tarballs and Hack Nerd Font zip before
   extraction; `install-deps.ps1` verifies the pinned Hack.zip before registering
-  fonts. Update the version and checksum constants together.
+  fonts. The Ubuntu CI job also pins and verifies its direct GitHub downloads.
+  Update the version and checksum constants together.
 - **Both installers open with an "install EVERYTHING?" prompt.** Interactive
   runs that didn't pass `--all`/`-All` get one upfront question; answering yes
   flips `YES_ALL`/`$All` so the rest runs with no per-item prompts. Skipped when

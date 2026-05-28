@@ -17,6 +17,12 @@ defaults:
   run:
     shell: bash
 
+env:
+  CARGO_BINSTALL_COMMIT: 7884deddd95d515c3701294cf61a8b96cccc123b
+  CARGO_BINSTALL_INSTALLER_SHA256: d3a93702160e0ec03e2a4e996855db1f01adee801fb84a43add24e0877ef8eae
+  NVIM_LINUX_VERSION: v0.12.2
+  NVIM_LINUX_X86_64_SHA256: 31cf85945cb600d96cdf69f88bc68bec814acbff50863c5546adef3a1bcef260
+
 jobs:
   ubuntu:
     runs-on: ubuntu-24.04
@@ -40,7 +46,8 @@ jobs:
             curl -fsSL https://starship.rs/install.sh -o /tmp/starship-install.sh
             sh /tmp/starship-install.sh -y
           fi
-          curl -fsSL https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh -o /tmp/cargo-binstall.sh
+          curl -fsSL "https://raw.githubusercontent.com/cargo-bins/cargo-binstall/${CARGO_BINSTALL_COMMIT}/install-from-binstall-release.sh" -o /tmp/cargo-binstall.sh
+          printf '%s  %s\n' "$CARGO_BINSTALL_INSTALLER_SHA256" /tmp/cargo-binstall.sh | sha256sum -c -
           bash /tmp/cargo-binstall.sh
           "$HOME/.cargo/bin/cargo-binstall" -y taplo-cli hyperfine
           python3 -m pip install --user --break-system-packages yamllint editorconfig-checker
@@ -56,8 +63,9 @@ jobs:
           sudo apt-get install -y powershell
           pwsh -NoProfile -Command '$PSVersionTable.PSVersion'
 
-          # Neovim stable release tarball avoids AppImage/FUSE and old asset-name drift.
-          curl -fsSL https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz -o /tmp/nvim-linux-x86_64.tar.gz
+          # Neovim pinned release tarball avoids AppImage/FUSE and old asset-name drift.
+          curl -fsSL "https://github.com/neovim/neovim/releases/download/${NVIM_LINUX_VERSION}/nvim-linux-x86_64.tar.gz" -o /tmp/nvim-linux-x86_64.tar.gz
+          printf '%s  %s\n' "$NVIM_LINUX_X86_64_SHA256" /tmp/nvim-linux-x86_64.tar.gz | sha256sum -c -
           sudo rm -rf /opt/nvim-linux-x86_64
           sudo tar -xzf /tmp/nvim-linux-x86_64.tar.gz -C /opt
           sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
