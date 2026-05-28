@@ -38,4 +38,10 @@ describe("format-on-save autocmds", function()
       "conform.lua must check vim.b.skip_format_on_save for :WNF to work"
     )
   end)
+
+  it("runs Ruff fixes before Ruff formatting for Python", function()
+    package.loaded["plugins.conform"] = nil
+    local spec = require("plugins.conform")
+    assert.are.same({ "ruff_fix", "ruff_format" }, spec.opts.formatters_by_ft.python)
+  end)
 end)
