@@ -301,6 +301,9 @@ save only**. The next plain `:w` formats normally. Implemented in
   `None` during pane init (psmux issue #150 — fresh panes ignore the profile's
   `HistoryAndPlugin`). With this on, the profile's ListView prediction +
   `Tab=MenuComplete` survive into psmux panes.
+  `bootstrap.ps1` warns but continues when `pwsh` is missing, because the
+  overlay is still the correct symlink and `install-deps.ps1` owns installing
+  PowerShell 7.
   Diagnose inside a pane with `(Get-Process -Id $PID).Name` (expect `pwsh`).
   Do NOT add `set -g default-shell` to the main `tmux.conf` — `pwsh` does not
   exist on Unix; keep Windows-specific tmux settings in the overlay.

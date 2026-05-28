@@ -205,6 +205,9 @@ bootstrap.ps1: REFUSING to run.
 New-SymLink -Source (Join-Path $RepoRoot 'nvim')                       -Destination $nvimDest
 New-SymLink -Source (Join-Path $RepoRoot 'starship\starship.toml')     -Destination (Join-Path $env:USERPROFILE '.config\starship.toml')
 New-SymLink -Source (Join-Path $RepoRoot 'tmux\tmux.conf')             -Destination (Join-Path $env:USERPROFILE '.tmux.conf')
+if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
+    Write-Host "  WARN     psmux will fail to spawn panes without pwsh; install via install-deps.ps1 first" -ForegroundColor Yellow
+}
 New-SymLink -Source (Join-Path $RepoRoot 'tmux\tmux.windows.conf')     -Destination (Join-Path $env:USERPROFILE '.tmux.windows.conf')
 New-SymLink -Source (Join-Path $RepoRoot 'shells\powershell_profile.ps1') -Destination $PROFILE
 

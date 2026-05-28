@@ -87,6 +87,14 @@ Describe "bootstrap.ps1" {
         $bak | Should -Not -BeNullOrEmpty
     }
 
+    It "warns when pwsh is missing for the psmux overlay" {
+        Mock -CommandName Get-Command -MockWith { $null } -ParameterFilter { $Name -eq 'pwsh' }
+
+        $out = & $script:Bootstrap 6>&1
+
+        ($out | Out-String) | Should -Match 'psmux will fail to spawn panes without pwsh'
+    }
+
     It "-DryRun changes nothing" {
         & $script:Bootstrap -DryRun | Out-Null
         Test-Path (Join-Path $env:LOCALAPPDATA 'nvim') | Should -Be $false
