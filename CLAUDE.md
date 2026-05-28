@@ -380,6 +380,9 @@ seams. Unset in normal runs, so it's skipped.
   has glob qualifiers (`(#qN.mh+24)`) that shellcheck (a bash linter)
   cannot parse. The directives suppress the noise; the file is otherwise
   shellcheck-clean.
+- **`shells/zshrc` probes installed locales before exporting one.** Prefer
+  `en_US.UTF-8` when `locale -a` reports it, fall back to `C.UTF-8`, and leave
+  the caller's locale untouched when neither exists.
 - **`nvim/lazy-lock.json` is tracked** (NOT in `.gitignore`). This is how
   every machine ends up on the same plugin commits.
 - **`ghostty/config` sets `window-save-state = default`** (NOT `always`)

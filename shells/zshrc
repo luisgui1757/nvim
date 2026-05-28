@@ -4,10 +4,21 @@
 # Cross-platform zsh init. Safe on macOS (Homebrew), WSL Ubuntu, plain Linux.
 
 # ---- Locale (set early so anything that reads LANG gets it) ------------------
-export LANG=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
-export LANGUAGE=en_US.UTF-8
-export LC_MESSAGES=en_US.UTF-8
+_dotfiles_locale=""
+if command -v locale >/dev/null 2>&1; then
+  if locale -a 2>/dev/null | grep -qxE 'en_US\.(UTF-8|utf8)'; then
+    _dotfiles_locale="en_US.UTF-8"
+  elif locale -a 2>/dev/null | grep -qxE 'C\.(UTF-8|utf8)'; then
+    _dotfiles_locale="C.UTF-8"
+  fi
+fi
+if [[ -n "$_dotfiles_locale" ]]; then
+  export LANG="$_dotfiles_locale"
+  export LC_ALL="$_dotfiles_locale"
+  export LANGUAGE="$_dotfiles_locale"
+  export LC_MESSAGES="$_dotfiles_locale"
+fi
+unset _dotfiles_locale
 
 # ---- Homebrew detection (mac + linuxbrew) ------------------------------------
 # $HOMEBREW_PREFIX is set by `brew shellenv`; if not in the environment yet,
