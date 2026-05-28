@@ -63,8 +63,8 @@ return {
         {
           type = "pwa-chrome",
           request = "launch",
-          name = "Launch Chrome - WM",
-          url = "http://localhost:4504/wm/",
+          name = "Launch Chrome",
+          url = vim.env.DAP_LAUNCH_URL or "http://localhost:3000",
           webRoot = "${workspaceFolder}",
         },
       }

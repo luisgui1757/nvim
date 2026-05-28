@@ -181,6 +181,9 @@ when their dependency tool is missing on the current machine.
   with different timeouts. `:WNF` (or `:wnf`) skips formatting for one save.
 - **Mason installs LSP servers + formatters via mason-tool-installer.** No
   `mason-lspconfig` — redundant on nvim 0.11 with `vim.lsp.enable`.
+- **DAP launches stay generic.** The shared browser launch defaults to
+  `http://localhost:3000`; set `DAP_LAUNCH_URL` or put project-specific launch
+  configs in workspace `.nvim.lua` files.
 - **Starship language modules pared down.** Only `c, go, node, rust, python,
   conda` are enabled. Disabled languages don't spawn version probes on every
   prompt.

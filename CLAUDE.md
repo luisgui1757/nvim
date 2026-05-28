@@ -133,6 +133,12 @@ to lazy-loading (`event` / `cmd` / `keys` / `ft`). Only `rose-pine` may set
 3. No new autocmd — conform's `format_on_save` handles it. The buffer-local
    `vim.b.skip_format_on_save` short-circuit (i.e. `:WNF`) is already in place.
 
+### Add a project-specific DAP launch
+
+Keep shared DAP config generic. Set `DAP_LAUNCH_URL` for the default browser
+launch URL, or put project-specific `dap.configurations` in a workspace
+`.nvim.lua`; do not bake app names, ports, or routes into these dotfiles.
+
 ### Add a treesitter parser
 
 1. Add the parser name to `ensure_installed` in
