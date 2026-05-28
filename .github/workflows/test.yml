@@ -27,6 +27,10 @@ jobs:
         run: |
           set -euxo pipefail
           ./install-deps.sh --dry-run --all
+      - name: Dogfood setup dry run
+        run: |
+          set -euxo pipefail
+          ./setup.sh --dry-run --all
       - name: Install deps
         run: |
           set -euxo pipefail
@@ -96,6 +100,10 @@ jobs:
         run: |
           set -euxo pipefail
           ./install-deps.sh --dry-run --all
+      - name: Dogfood setup dry run
+        run: |
+          set -euxo pipefail
+          ./setup.sh --dry-run --all
       - name: Install deps
         run: |
           set -euxo pipefail
@@ -116,6 +124,12 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           .\install-deps.ps1 -DryRun -All
+      - name: Dogfood setup dry run
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          .\setup.ps1 -DryRun -All
       - name: Install deps
         shell: pwsh
         run: |
