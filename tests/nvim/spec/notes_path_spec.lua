@@ -64,3 +64,44 @@ describe("notes_path.resolve", function()
     end)
   end)
 end)
+
+describe("notes plugin spec", function()
+  local original_system
+  local original_getenv
+  local original_uname
+
+  before_each(function()
+    package.loaded["plugins.notes"] = nil
+    package.loaded["util.notes_path"] = nil
+    original_system = vim.fn.system
+    original_getenv = vim.fn.getenv
+    original_uname = vim.uv.os_uname
+  end)
+
+  after_each(function()
+    vim.fn.system = original_system
+    vim.fn.getenv = original_getenv
+    vim.uv.os_uname = original_uname
+    package.loaded["plugins.notes"] = nil
+    package.loaded["util.notes_path"] = nil
+  end)
+
+  it("does not shell out during lazy spec import", function()
+    local system_calls = 0
+    vim.fn.system = function()
+      system_calls = system_calls + 1
+      return "alice\n"
+    end
+    vim.fn.getenv = function()
+      return vim.NIL
+    end
+    vim.uv.os_uname = function()
+      return { sysname = "Linux", release = "microsoft-standard-WSL2" }
+    end
+
+    assert.has_no.errors(function()
+      require("plugins.notes")
+    end)
+    assert.are.equal(0, system_calls)
+  end)
+end)

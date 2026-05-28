@@ -1,5 +1,3 @@
-local notes_path = require("util.notes_path").resolve()
-
 -- markdown-preview.nvim removed deliberately. Its `cd app && npm install`
 -- build step modifies app/yarn.lock inside the plugin clone, which then
 -- permanently breaks `:Lazy update markdown-preview.nvim` ("You have local
@@ -23,6 +21,7 @@ return {
     -- gitignored ~/.zshrc.local); otherwise an OS-appropriate default is used
     -- (see util/notes_path.lua).
     config = function()
+      local notes_path = require("util.notes_path").resolve()
       pcall(vim.fn.mkdir, notes_path, "p") -- never let a mkdir failure break startup
       require("obsidian").setup({
         workspaces = {
