@@ -35,9 +35,12 @@ vim.opt.mousescroll = "ver:0,hor:0"
 vim.opt.mousefocus = false
 vim.opt.mousemoveevent = false
 
--- Whitespace: tab + trailing only (space=· was distracting)
+-- Whitespace: tabs as ▸ , leading spaces as · (so indentation is visible
+-- without polluting in-line spaces), trailing spaces as ·, nbsp marker.
+-- `lead` (Neovim 0.10+) renders only leading whitespace, avoiding the
+-- distraction the global `space = "·"` setting used to cause.
 vim.opt.list = true
-vim.opt.listchars = { tab = "▸ ", trail = "·", nbsp = "␣" }
+vim.opt.listchars = { tab = "▸ ", lead = "·", trail = "·", nbsp = "␣" }
 
 -- Cross-platform system clipboard.
 -- mac: works via pbcopy; wsl: needs win32yank.exe; linux: needs xclip/wl-copy.

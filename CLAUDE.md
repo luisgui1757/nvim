@@ -339,19 +339,21 @@ seams. Unset in normal runs, so it's skipped.
 
 ## Things that look weird but are intentional
 
-- **Mouse is disabled in nvim AND tmux** (`vim.opt.mouse = ""` and
-  `set -g mouse off`). User preference -- keyboard-only, no accidental
-  selection/scroll behaviors stealing focus across panes. Do not "fix".
-  Guarded for tmux by `tests/tmux/option_test.sh` (`check mouse off`).
-  The nvim side adds three belt-and-braces options alongside `mouse = ""`:
+- **Mouse split: ON in tmux/psmux, OFF in nvim.** tmux uses `set -g mouse
+  on` (guarded by `tests/tmux/option_test.sh` `check mouse on`) so pane
+  click-to-focus, scroll-wheel into copy-mode, drag-resize on pane borders,
+  and Windows Terminal-native selection all work. Nvim alone stays
+  keyboard-only via `vim.opt.mouse = ""` plus three belt-and-braces options:
   `mousescroll = "ver:0,hor:0"` + `mousefocus = false` + `mousemoveevent =
-  false`. Reason: on Windows under psmux + Windows Terminal, multiple input
-  layers can flip mouse handling on (a Lazy-loaded plugin, the `:terminal`
-  pass-through, etc.). If `mouse` ever gets flipped back to its nvim 0.11
-  default of `"nvi"`, the other three options keep wheel scroll inert,
-  prevent focus-follows-mouse, and suppress motion events. Use the
-  documented zero-count form for `mousescroll` (NOT the empty string --
-  that is not a valid value per `:h 'mousescroll'`).
+  false`. Reason for the defense: on Windows under psmux + WT, multiple
+  input layers (a Lazy-loaded plugin, the `:terminal` pass-through, etc.)
+  could flip nvim mouse back to its 0.11 default `"nvi"`; the other three
+  options keep wheel-scroll inert, prevent focus-follows-mouse, and
+  suppress motion events. Use the documented zero-count form for
+  `mousescroll` (NOT the empty string -- that is not a valid value per
+  `:h 'mousescroll'`). Earlier attempts to also disable psmux's
+  `mouse-selection`/`pwsh-mouse-selection`/`scroll-enter-copy-mode` are
+  reverted -- the user prefers tmux/psmux mouse fully on.
 - **Arrow keys are mapped to `<Nop>`** in `vim-options.lua`. User
   preference; hjkl-only navigation enforced.
 - **`vim.opt.clipboard = "unnamedplus"`** even on macOS — works fine via
@@ -385,28 +387,21 @@ seams. Unset in normal runs, so it's skipped.
   become a bare space** — an earlier encoding pass stripped three of these to
   U+0020, which rendered `~/Downloads`, `~/Music`, `~/Pictures` as a blank `~/`.
   The same `directory_test.sh` guards against whitespace-only values.
-- **tmux status hierarchy is hue + bg-block + weight, NOT contrast.** Inactive
-  windows are `iris #c4a7e7` (cool), active is `gold #f6c177 bold` on `bg=overlay
-  #26233a` (warm block on cool row). I tried fixing readability complaints by
-  bumping inactive contrast three times (`muted #6e6a86` → `subtle #908caa` →
-  `text #e0def4`) — all wrong: contrast alone made the bar legible but flat, with
-  no visual hierarchy. The real lever was hue separation + a bg-block on active.
-  Do NOT "fix" iris-on-base back to text or revert the active overlay block. Also
-  don't switch to `dim` for the inactive — it's terminal/ConPTY-flaky and re-creates
-  the legibility problem under psmux. (Codex 5.5 xhigh audit, 2026-05; pane
-  borders also bumped overlay→muted so they're actually visible at 3.4:1
-  instead of 1.16:1.)
-- **psmux `mouse-selection` is SEPARATE from tmux's `mouse` option.** `set -g
-  mouse off` only disables tmux's mouse mode (pane resize, etc.); psmux has its
-  own client-side drag-selection layer (`mouse-selection`, default `on`,
-  issue #245) that paints a selection while the button is held and clears it
-  on release — which looked like "Windows Terminal selection is broken in
-  psmux" but was actually psmux owning the mouse and not WT. The fix is in
-  `tmux/tmux.windows.conf`: `set -g mouse-selection off` + `set -g
-  pwsh-mouse-selection off` + `set -g scroll-enter-copy-mode off`. With those
-  three off, WT owns the mouse → native click+drag works, release keeps
-  selection, Ctrl+Shift+C copies. Symlink-only on Windows; main `tmux.conf`
-  sources the overlay with `-q` so Unix is unaffected.
+- **tmux window-status uses plain text + bold, not the iris+bg-block
+  hierarchy I shipped briefly.** Inactive is `text #e0def4` (13.39:1
+  contrast on base), active is `gold #f6c177 bold` (no bg block).
+  History/rejected experiments worth not re-attempting:
+  (1) inactive `muted #6e6a86` -- 3.4:1 contrast, failed AA, illegible;
+  (2) inactive `subtle #908caa` -- 5.5:1, borderline, user still found
+  illegible; (3) iris-cool inactive + gold-bold ON `bg=overlay #26233a`
+  active block (Codex 5.5 xhigh recommendation, commit 9cf13f8) -- the
+  hierarchy actually worked in theory but the user disliked the result
+  in practice and reverted. **Do NOT** switch the inactive to `dim` --
+  it is terminal/ConPTY-flaky under psmux and re-creates the
+  legibility problem. Pane borders and the status-left separator stay
+  at `muted #6e6a86` though (those WERE invisible at the original
+  `overlay #26233a` choice -- 1.16:1 contrast -- and the bump is
+  unrelated to the window-status experiment).
 - **`stylua.toml` at repo root is load-bearing.** stylua reads ONLY its own
   config (`stylua.toml` / `.stylua.toml`) -- it does NOT respect
   `.editorconfig`. Its built-in defaults are `indent_type = "Tabs"` and

@@ -33,7 +33,7 @@ check() {
 }
 
 check focus-events on
-check mouse off
+check mouse on
 check escape-time 10
 check history-limit 50000
 
