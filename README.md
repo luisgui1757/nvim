@@ -51,10 +51,14 @@ curl -fsSL https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.sh 
 ```
 
 ```powershell
-# windows -- run elevated OR with Developer Mode enabled (Settings ->
-# Privacy & security -> For developers -> Developer Mode = On)
+# windows -- enable Developer Mode, then run from a normal PowerShell
+# Settings -> Privacy & security -> For developers -> Developer Mode = On
 irm https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.ps1 | iex
 ```
+
+If Developer Mode is unavailable AND you cannot enable it, run JUST
+`bootstrap.ps1` from an elevated PowerShell; do NOT elevate `setup.ps1` --
+scoop refuses admin.
 
 Add `--all` / `-All` for fully non-interactive (Y to every prompt). An
 interactive run (no `--all`) also opens with a single **"install EVERYTHING
