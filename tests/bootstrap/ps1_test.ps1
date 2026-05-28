@@ -179,4 +179,34 @@ Describe "bootstrap.ps1 -MergeWindowsTerminal" {
         $merged = Get-Content -Raw -LiteralPath $script:WTSettings | ConvertFrom-Json
         $merged.profiles.defaults | Should -Not -BeNullOrEmpty
     }
+
+    It "preserves custom Windows Terminal actions, schemes, and themes" {
+        @"
+{
+    "profiles": { "defaults": {}, "list": [] },
+    "actions": [
+        { "command": "openSettings", "keys": "ctrl+comma" },
+        { "command": "oldCopy", "keys": "ctrl+c" }
+    ],
+    "schemes": [
+        { "name": "custom-scheme", "background": "#000000" },
+        { "name": "rose-pine", "background": "#ffffff" }
+    ],
+    "themes": [
+        { "name": "custom-theme", "tab": { "background": "#000000" } },
+        { "name": "rose-pine", "tab": { "background": "#ffffff" } }
+    ]
+}
+"@ | Set-Content -LiteralPath $script:WTSettings -Encoding UTF8
+
+        & $script:Bootstrap -MergeWindowsTerminal | Out-Null
+
+        $merged = Get-Content -Raw -LiteralPath $script:WTSettings | ConvertFrom-Json
+        ($merged.actions | Where-Object { $_.keys -eq 'ctrl+comma' }) | Should -Not -BeNullOrEmpty
+        ($merged.actions | Where-Object { $_.keys -eq 'ctrl+c' }).command.action | Should -Be 'copy'
+        ($merged.schemes | Where-Object { $_.name -eq 'custom-scheme' }) | Should -Not -BeNullOrEmpty
+        ($merged.schemes | Where-Object { $_.name -eq 'rose-pine' }).background | Should -Be '#191724'
+        ($merged.themes | Where-Object { $_.name -eq 'custom-theme' }) | Should -Not -BeNullOrEmpty
+        ($merged.themes | Where-Object { $_.name -eq 'rose-pine' }).tab.background | Should -Be '#191724ff'
+    }
 }

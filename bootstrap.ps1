@@ -274,6 +274,45 @@ if ($MergeWindowsTerminal) {
                     $obj.$name = $value
                 }
             }
+            function Get-ArrayValue {
+                param($value)
+                if ($null -eq $value) {
+                    return @()
+                }
+                return @($value)
+            }
+            function Merge-ObjectArrayByProperty {
+                param($currentItems, $fragmentItems, [string]$propertyName)
+                $result = @()
+                $fragmentByKey = @{}
+                $emitted = @{}
+
+                foreach ($item in (Get-ArrayValue $fragmentItems)) {
+                    $key = [string]$item.$propertyName
+                    if ($key) {
+                        $fragmentByKey[$key] = $item
+                    }
+                }
+
+                foreach ($item in (Get-ArrayValue $currentItems)) {
+                    $key = [string]$item.$propertyName
+                    if ($key -and $fragmentByKey.ContainsKey($key)) {
+                        $result += $fragmentByKey[$key]
+                        $emitted[$key] = $true
+                    } else {
+                        $result += $item
+                    }
+                }
+
+                foreach ($item in (Get-ArrayValue $fragmentItems)) {
+                    $key = [string]$item.$propertyName
+                    if (-not $key -or -not $emitted.ContainsKey($key)) {
+                        $result += $item
+                    }
+                }
+
+                return $result
+            }
             if ($null -ne $fragment.copyFormatting)        { Set-OrAdd-Property $current "copyFormatting"        $fragment.copyFormatting }
             if ($null -ne $fragment.copyOnSelect)          { Set-OrAdd-Property $current "copyOnSelect"          $fragment.copyOnSelect }
             if ($null -ne $fragment.firstWindowPreference) { Set-OrAdd-Property $current "firstWindowPreference" $fragment.firstWindowPreference }
@@ -287,9 +326,9 @@ if ($MergeWindowsTerminal) {
             } else {
                 $current.profiles.defaults = $fragment.profiles.defaults
             }
-            $current.actions = $fragment.actions
-            $current.schemes = $fragment.schemes
-            $current.themes  = $fragment.themes
+            Set-OrAdd-Property $current "actions" @(Merge-ObjectArrayByProperty $current.actions $fragment.actions "keys")
+            Set-OrAdd-Property $current "schemes" @(Merge-ObjectArrayByProperty $current.schemes $fragment.schemes "name")
+            Set-OrAdd-Property $current "themes"  @(Merge-ObjectArrayByProperty $current.themes  $fragment.themes  "name")
             $tmp = "$wtSettings.tmp"
             $current | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $tmp -Encoding UTF8
             Move-Item -Force -LiteralPath $tmp -Destination $wtSettings

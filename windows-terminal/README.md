@@ -59,4 +59,6 @@ Move-Item -Force -LiteralPath $tmp -Destination $wtSettings
 ```
 
 `bootstrap.ps1` will offer to run this merge for you, with a backup of the
-pre-merge `settings.json` saved as `settings.json.bak.<timestamp>`.
+pre-merge `settings.json` saved as `settings.json.bak.<timestamp>`. It preserves
+custom `actions`, `schemes`, and `themes`, while entries with the same key or
+name are replaced by the repo fragment.
