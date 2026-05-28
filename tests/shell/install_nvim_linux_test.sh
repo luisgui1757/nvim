@@ -67,12 +67,18 @@ maybe_sudo() {
     esac
 }
 
+verify_sha256() {
+    printf '%s %s\n' "$1" "$2" > "$TMP_ROOT/sha.log"
+    return 0
+}
+
 YES_ALL=1
 DRY_RUN=0
 output="$(install_nvim_linux)"
 
 [[ "$output" == *"installed nvim"* ]]
-grep -F "https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz" "$TMP_ROOT/curl.log" >/dev/null
+grep -F "https://github.com/neovim/neovim/releases/download/v0.12.2/nvim-linux-x86_64.tar.gz" "$TMP_ROOT/curl.log" >/dev/null
+grep -F "31cf85945cb600d96cdf69f88bc68bec814acbff50863c5546adef3a1bcef260" "$TMP_ROOT/sha.log" >/dev/null
 grep -F -- "-xzf" "$TMP_ROOT/tar.log" >/dev/null
 grep -F -- "-C /opt" "$TMP_ROOT/tar.log" >/dev/null
 grep -F "/opt/nvim-linux-x86_64" "$TMP_ROOT/sudo.log" >/dev/null

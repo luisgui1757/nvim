@@ -18,6 +18,8 @@ param(
 )
 
 $ErrorActionPreference = 'Continue'
+$HackNerdFontVersion = 'v3.4.0'
+$HackNerdFontSha256 = '8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897'
 
 # ---- Package-manager detection + scoop bootstrap -----------------------------
 function Get-AvailablePM {
@@ -58,6 +60,11 @@ function Ask {
     $resp = Read-Host "  $prompt [Y/n]"
     if ([string]::IsNullOrWhiteSpace($resp)) { return $true }
     return ($resp -match '^[Yy]')
+}
+
+function Test-FileSha256 {
+    param([string]$Path, [string]$Expected)
+    return ((Get-FileHash $Path -Algorithm SHA256).Hash.ToLowerInvariant() -eq $Expected.ToLowerInvariant())
 }
 
 # ---- Per-tool: package id per PM. Empty string means "not available there". --
@@ -216,13 +223,16 @@ function Install-HackNerdFont {
 
     # Path 2: download Hack.zip and register fonts user-scope. No admin needed.
     if ($DryRun) {
-        Write-Host "  would: download nerd-fonts/Hack.zip, extract, register in HKCU\\Fonts"
+        Write-Host "  would: download nerd-fonts/$HackNerdFontVersion/Hack.zip, verify sha256, extract, register in HKCU\\Fonts"
         return
     }
     try {
         $tmp = New-Item -ItemType Directory -Force -Path (Join-Path $env:TEMP "hack-nf-$([guid]::NewGuid())")
         $zip = Join-Path $tmp.FullName "Hack.zip"
-        Invoke-WebRequest -Uri "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Hack.zip" -OutFile $zip -UseBasicParsing
+        Invoke-WebRequest -Uri "https://github.com/ryanoasis/nerd-fonts/releases/download/$HackNerdFontVersion/Hack.zip" -OutFile $zip -UseBasicParsing
+        if (-not (Test-FileSha256 -Path $zip -Expected $HackNerdFontSha256)) {
+            throw "Hack.zip SHA256 verification failed"
+        }
         Expand-Archive -Path $zip -DestinationPath $tmp.FullName -Force
 
         $fontDest = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"

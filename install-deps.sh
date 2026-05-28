@@ -14,6 +14,11 @@ set -euo pipefail
 
 YES_ALL=0
 DRY_RUN=0
+NVIM_LINUX_VERSION="v0.12.2"
+NVIM_LINUX_X86_64_SHA256="31cf85945cb600d96cdf69f88bc68bec814acbff50863c5546adef3a1bcef260"
+NVIM_LINUX_ARM64_SHA256="f697d4e4582b6e4b5c3c26e76e06ce26efa08ba1768e03fd2733fcc422bb0490"
+HACK_NERD_FONT_VERSION="v3.4.0"
+HACK_NERD_FONT_SHA256="8ca33a60c791392d872b80d26c42f2bfa914a480f9eb2d7516d9f84373c36897"
 for arg in "$@"; do
     case "$arg" in
         --all|-y)   YES_ALL=1 ;;
@@ -26,6 +31,18 @@ done
 
 # ---- Bash 3.2-safe helpers ---------------------------------------------------
 have() { command -v "$1" >/dev/null 2>&1; }
+verify_sha256() {
+    local f="$1" expected="$2" got
+    if have shasum; then
+        got="$(shasum -a 256 "$f" | awk '{print $1}')"
+    elif have sha256sum; then
+        got="$(sha256sum "$f" | awk '{print $1}')"
+    else
+        echo "  FAIL: need shasum or sha256sum to verify $f" >&2
+        return 1
+    fi
+    [[ "$got" == "$expected" ]]
+}
 have_any() {
     local b
     for b in "$@"; do
@@ -388,11 +405,17 @@ install_nvim_linux() {
         printf "  ok        %-26s already installed\n" "nvim"
         return
     fi
-    local machine arch asset url install_dir tmp tarball
+    local machine arch asset url install_dir expected tmp tarball
     machine="$(uname -m)"
     case "$machine" in
-        x86_64|amd64) arch="x86_64" ;;
-        aarch64|arm64) arch="arm64" ;;
+        x86_64|amd64)
+            arch="x86_64"
+            expected="$NVIM_LINUX_X86_64_SHA256"
+            ;;
+        aarch64|arm64)
+            arch="arm64"
+            expected="$NVIM_LINUX_ARM64_SHA256"
+            ;;
         *)
             printf "  manual    %-26s unsupported Linux arch: %s\n" "nvim" "$machine"
             echo "            install from https://github.com/neovim/neovim/releases"
@@ -401,7 +424,7 @@ install_nvim_linux() {
     esac
 
     asset="nvim-linux-${arch}.tar.gz"
-    url="https://github.com/neovim/neovim/releases/download/stable/${asset}"
+    url="https://github.com/neovim/neovim/releases/download/${NVIM_LINUX_VERSION}/${asset}"
     install_dir="/opt/nvim-linux-${arch}"
 
     if ! ask "Install nvim (official Neovim stable Linux ${arch} tarball)?"; then
@@ -420,6 +443,11 @@ install_nvim_linux() {
     tarball="$tmp/$asset"
     if ! curl -fsSL "$url" -o "$tarball"; then
         echo "  FAIL: nvim download failed from $url"
+        rm -rf "$tmp"
+        return
+    fi
+    if ! verify_sha256 "$tarball" "$expected"; then
+        echo "  FAIL: checksum mismatch for $asset"
         rm -rf "$tmp"
         return
     fi
@@ -645,16 +673,23 @@ install_nerd_font() {
         printf "  skipped   %-26s\n" "Hack Nerd Font"
         return
     fi
+    local url
+    url="https://github.com/ryanoasis/nerd-fonts/releases/download/${HACK_NERD_FONT_VERSION}/Hack.zip"
     if [[ "$DRY_RUN" -eq 1 ]]; then
-        echo "  would: curl -fL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Hack.zip"
+        echo "  would: curl -fL $url"
+        echo "         verify sha256 $HACK_NERD_FONT_SHA256"
         echo "         unzip -> \${XDG_DATA_HOME:-\$HOME/.local/share}/fonts/HackNerdFont/"
         echo "         fc-cache -f"
         return
     fi
     local font_dir="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/HackNerdFont"
     local tmp; tmp="$(mktemp -d)"
-    if ! curl -fL -o "$tmp/Hack.zip" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Hack.zip"; then
+    if ! curl -fL -o "$tmp/Hack.zip" "$url"; then
         echo "  FAIL: download failed; install Hack Nerd Font manually from nerd-fonts releases"
+        rm -rf "$tmp"; return
+    fi
+    if ! verify_sha256 "$tmp/Hack.zip" "$HACK_NERD_FONT_SHA256"; then
+        echo "  FAIL: checksum mismatch for Hack.zip"
         rm -rf "$tmp"; return
     fi
     mkdir -p "$font_dir"

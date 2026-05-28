@@ -112,10 +112,11 @@ On **domain / AD / LDAP** machines the account isn't in `/etc/passwd`, so
 `chsh` can't help — there it instead offers to re-exec interactive bash into
 zsh from `~/.bashrc` (reversible).
 
-On Linux without Homebrew, Phase 1 installs Neovim from the official GitHub
-stable tarball into `/opt/nvim-linux-<arch>` (`x86_64` or `arm64`) and symlinks
-`/usr/local/bin/nvim`. That avoids distro packages that lag below this config's
-Neovim 0.11+ floor.
+On Linux without Homebrew, Phase 1 installs Neovim from a pinned official
+GitHub release tarball into `/opt/nvim-linux-<arch>` (`x86_64` or `arm64`) and
+symlinks `/usr/local/bin/nvim`. The installer verifies the tarball SHA-256
+first, which avoids distro packages that lag below this config's Neovim 0.11+
+floor.
 
 On macOS, Phase 1 installs Ghostty through `brew install --cask ghostty` when
 selected. Linux keeps the Linux-specific brew HEAD / snap / manual install

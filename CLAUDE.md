@@ -242,6 +242,10 @@ save only**. The next plain `:w` formats normally. Implemented in
   its accented é to match the extension's label; the ps1 emits it as a `\u` JSON
   escape (or `[char]0xE9`) so that file stays pure ASCII (invariant), while the
   sh side uses the literal é.
+- **Direct GitHub downloads are pinned and SHA-256 verified.** `install-deps.sh`
+  verifies the pinned Neovim Linux tarballs and Hack Nerd Font zip before
+  extraction; `install-deps.ps1` verifies the pinned Hack.zip before registering
+  fonts. Update the version and checksum constants together.
 - **Both installers open with an "install EVERYTHING?" prompt.** Interactive
   runs that didn't pass `--all`/`-All` get one upfront question; answering yes
   flips `YES_ALL`/`$All` so the rest runs with no per-item prompts. Skipped when
