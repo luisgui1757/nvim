@@ -110,8 +110,8 @@ Describe "bootstrap.ps1 -MergeWindowsTerminal" {
     BeforeEach {
         $script:FakeHome = Join-Path ([System.IO.Path]::GetTempPath()) ("bs-wt-" + [System.Guid]::NewGuid())
         $script:FakeLocalAppData = Join-Path $script:FakeHome "AppData/Local"
-        # APPDATA (Roaming) -- bootstrap.ps1 always runs the link block, which
-        # symlinks lazygit\config.yml under %APPDATA%. Confine that to FakeHome
+        # LOCALAPPDATA -- bootstrap.ps1 always runs the link block, which
+        # symlinks lazygit\config.yml under %LOCALAPPDATA%. Confine that to FakeHome
         # so -MergeWindowsTerminal runs do not pollute the real user profile.
         $script:FakeAppData = Join-Path $script:FakeHome "AppData/Roaming"
         $script:WTPackageDir = Join-Path $script:FakeLocalAppData "Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState"
