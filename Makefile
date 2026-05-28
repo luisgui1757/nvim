@@ -68,5 +68,4 @@ test-static:
 	@bash tests/static/run_all.sh
 
 lint:
-	@command -v shellcheck >/dev/null 2>&1 && shellcheck bootstrap.sh shells/zshrc tests/**/*.sh tests/*.sh 2>/dev/null || \
-		echo "skipped: shellcheck not installed (brew install shellcheck)"
+	@bash tests/shell/lint.sh
