@@ -21,5 +21,11 @@
 # emitter); lazygit Custom_Keybindings.md (array-form binding syntax).
 keybinding:
   commits:
-    moveDownCommit: [<ctrl+j>, <alt+j>, <alt+down>]
-    moveUpCommit: [<ctrl+k>, <alt+k>, <alt+up>]
+    # F8/F7 are the guaranteed fallbacks: F-keys travel as raw scancodes
+    # through ConPTY/psmux with no Alt/Ctrl interpretation, so they survive
+    # even if Alt+J/K or Ctrl+J get eaten by Windows Terminal, psmux, or
+    # any layer in between. Keep the modifier-prefixed variants first
+    # because they are still the canonical lazygit keys on every other
+    # platform.
+    moveDownCommit: [<ctrl+j>, <alt+j>, <alt+down>, <f8>]
+    moveUpCommit: [<ctrl+k>, <alt+k>, <alt+up>, <f7>]
