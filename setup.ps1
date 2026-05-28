@@ -10,7 +10,8 @@
 #   .\setup.ps1 -MergeWindowsTerminal     also merge the WT rose-pine fragment
 #
 # Remote usage (no checkout yet):
-#   irm https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.ps1 | iex
+#   iwr https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.ps1 -OutFile setup.ps1
+#   .\setup.ps1 -All
 #
 # The remote form clones the repo to $env:DOTFILES_DEST (default
 # %USERPROFILE%\dotfiles) and re-invokes itself locally.
@@ -30,6 +31,16 @@ $ErrorActionPreference = 'Stop'
 
 $RepoUrl     = 'https://github.com/luisgui1757/dotfiles.git'
 $DefaultDest = Join-Path $env:USERPROFILE 'dotfiles'
+
+$inputRedirected = $false
+$outputRedirected = $false
+try { $inputRedirected = [Console]::IsInputRedirected } catch { $inputRedirected = $true }
+try { $outputRedirected = [Console]::IsOutputRedirected } catch { $outputRedirected = $true }
+if ((-not [Environment]::UserInteractive -or $inputRedirected -or $outputRedirected) -and (-not $All) -and (-not $DryRun)) {
+    Write-Host "note: no TTY detected; running with -All"
+    $All = $true
+    $PSBoundParameters['All'] = $true
+}
 
 # ---- Locate / clone the repo -------------------------------------------------
 # When piped from `irm | iex` there is no $PSCommandPath, so we clone and

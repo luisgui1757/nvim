@@ -10,7 +10,7 @@
 #   ./setup.sh --skip-nvim         skip nvim plugin + Mason sync
 #
 # Remote usage (no checkout yet):
-#   curl -fsSL https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.sh | bash -s -- --all
 #
 # The remote form clones the repo to $DOTFILES_DEST (default ~/dotfiles)
 # and then re-invokes itself locally. Set DOTFILES_DEST=/some/other/path
@@ -39,6 +39,11 @@ for arg in "$@"; do
         *) echo "Unknown arg: $arg" >&2; exit 2 ;;
     esac
 done
+if [[ "$ALL" -eq 0 && "$DRY_RUN" -eq 0 && ! -t 0 ]]; then
+    ALL=1
+    echo "note: no TTY detected; running with --all"
+    set -- "$@" --all
+fi
 
 # ---- Locate / clone the repo -------------------------------------------------
 # When invoked via `curl | bash`, BASH_SOURCE is empty and there is no

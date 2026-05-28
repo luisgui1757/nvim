@@ -47,23 +47,26 @@ before nvim even opens.
 
 ```bash
 # mac / linux / wsl
-curl -fsSL https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.sh | bash -s -- --all
 ```
 
 ```powershell
 # windows -- enable Developer Mode, then run from a normal PowerShell
 # Settings -> Privacy & security -> For developers -> Developer Mode = On
-irm https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.ps1 | iex
+iwr https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.ps1 -OutFile setup.ps1
+.\setup.ps1 -All
 ```
 
 If Developer Mode is unavailable AND you cannot enable it, run JUST
 `bootstrap.ps1` from an elevated PowerShell; do NOT elevate `setup.ps1` --
 scoop refuses admin.
 
-Add `--all` / `-All` for fully non-interactive (Y to every prompt). An
-interactive run (no `--all`) also opens with a single **"install EVERYTHING
-without further prompts? [Y/n]"** question — answer `Y` to pull the lot in one
-go, or `n` to choose per tool.
+Pass `--all` / `-All` for explicit non-interactive installs (Y to every prompt).
+When setup detects redirected stdin/stdout and neither all nor dry-run was
+requested, it defaults to all and prints `note: no TTY detected; running with
+--all` (or `-All`). An interactive run (no all flag) still opens with a single
+**"install EVERYTHING without further prompts? [Y/n]"** question — answer `Y`
+to pull the lot in one go, or `n` to choose per tool.
 Add `--dry-run` / `-DryRun` to preview every step without touching disk.
 
 ### From an existing checkout
