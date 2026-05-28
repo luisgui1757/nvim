@@ -110,7 +110,7 @@ run_bootstrap() {
     [ ! -e "$FAKE_HOME/.config/lazygit/config.yml" ]
 }
 
-@test "missing git aborts with a clear error" {
+@test "missing git still symlinks configs" {
     # Build a sandbox PATH without git but with the basics (ln, readlink, etc.)
     sandbox=$(mktemp -d)
     for cmd in bash ln readlink uname dirname date mkdir mv cat grep tr basename printf; do
@@ -118,6 +118,7 @@ run_bootstrap() {
     done
     # Ensure pwsh is also absent so the optional pwsh branch is skipped.
     PATH="$sandbox" run bash "$REPO_ROOT/bootstrap.sh"
-    [ "$status" -ne 0 ]
-    [[ "$output" =~ "required command 'git'" ]]
+    [ "$status" -eq 0 ]
+    [ -L "$FAKE_HOME/.config/nvim" ]
+    [ "$(readlink "$FAKE_HOME/.config/nvim")" = "$REPO_ROOT/nvim" ]
 }

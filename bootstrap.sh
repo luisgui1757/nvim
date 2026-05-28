@@ -58,7 +58,6 @@ require_cmd() {
 }
 require_cmd ln
 require_cmd readlink
-require_cmd git
 
 echo "bootstrap: OS=$OS repo=$REPO_ROOT dry-run=$DRY_RUN"
 echo

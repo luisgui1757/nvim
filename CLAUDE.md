@@ -216,6 +216,8 @@ save only**. The next plain `:w` formats normally. Implemented in
 
 - Both installers are **idempotent** — running twice produces zero diffs.
   Tested by `tests/bootstrap/sh_test.bats` (and `ps1_test.ps1` on Windows).
+- `bootstrap.sh` does not require git; it only creates symlinks. `setup.sh`
+  owns cloning and pull/update behavior before bootstrap runs.
 - Pre-existing non-symlink targets are backed up to
   `<target>.bak.<timestamp>` (with `.1`, `.2`, … suffixes if a collision
   exists). Backups are never overwritten.
