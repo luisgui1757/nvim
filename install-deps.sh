@@ -48,7 +48,7 @@ is_wsl() { grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; }
 # ask MUST be defined before maybe_install_brew uses it.
 ask() {
     local prompt="$1"
-    if [[ "$YES_ALL" -eq 1 ]]; then return 0; fi
+    if [[ "$YES_ALL" -eq 1 || "$DRY_RUN" -eq 1 ]]; then return 0; fi
     printf "  %s [Y/n] " "$prompt"
     local answer
     if ! read -r answer; then return 1; fi
@@ -417,7 +417,7 @@ echo
 # One-shot "install everything" vs the per-item prompts. Skipped when --all was
 # already passed, and when there's no tty to read from (e.g. curl | bash).
 # Enter / Y == everything (recommended); n == choose per tool.
-if [[ "$YES_ALL" -ne 1 && -t 0 ]]; then
+if [[ "$YES_ALL" -ne 1 && "$DRY_RUN" -ne 1 && -t 0 ]]; then
     printf "Install EVERYTHING without further prompts? [Y/n]  (n = choose per tool) "
     if IFS= read -r _all_ans && [[ "$_all_ans" =~ ^[Nn] ]]; then
         echo "  -> per-item prompts"
