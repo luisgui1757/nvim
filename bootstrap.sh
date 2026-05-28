@@ -97,7 +97,7 @@ link() {
             echo "  relink    $dst (was → $current; backup → $backup)"
         else
             mv "$dst" "$backup"
-            ln -s "$src" "$dst"
+            replace_symlink "$src" "$dst"
             echo "  relinked  $dst → $src  (prior symlink → $backup)"
         fi
         return 0
@@ -110,7 +110,7 @@ link() {
             echo "  backup    $dst → $backup; then symlink"
         else
             mv "$dst" "$backup"   # mv -n would still race; unique_backup is the guarantee
-            ln -s "$src" "$dst"
+            replace_symlink "$src" "$dst"
             echo "  backed up $dst → $backup; linked → $src"
         fi
         return 0
@@ -119,9 +119,17 @@ link() {
     if [[ "$DRY_RUN" -eq 1 ]]; then
         echo "  link      $dst → $src"
     else
-        ln -s "$src" "$dst"
+        replace_symlink "$src" "$dst"
         echo "  linked    $dst → $src"
     fi
+}
+
+replace_symlink() {
+    local src="$1" dst="$2"
+    local tmp="${dst}.new"
+    rm -f "$tmp"
+    ln -s "$src" "$tmp"
+    mv -f "$tmp" "$dst"
 }
 
 # ---- Self-link guard ---------------------------------------------------------

@@ -221,7 +221,8 @@ save only**. The next plain `:w` formats normally. Implemented in
   owns cloning and pull/update behavior before bootstrap runs.
 - Pre-existing non-symlink targets are backed up to
   `<target>.bak.<timestamp>` (with `.1`, `.2`, … suffixes if a collision
-  exists). Backups are never overwritten.
+  exists). Backups are never overwritten. New symlinks are staged as
+  `<target>.new` and then renamed into place.
 - Broken symlinks are treated as wrong symlinks: bootstrap backs up the link
   itself and replaces it with the repo target, so reruns recover stale moved
   targets idempotently.

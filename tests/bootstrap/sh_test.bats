@@ -113,7 +113,7 @@ run_bootstrap() {
 @test "missing git still symlinks configs" {
     # Build a sandbox PATH without git but with the basics (ln, readlink, etc.)
     sandbox=$(mktemp -d)
-    for cmd in bash ln readlink uname dirname date mkdir mv cat grep tr basename printf; do
+    for cmd in bash ln readlink uname dirname date mkdir mv rm cat grep tr basename printf; do
         if path=$(command -v "$cmd"); then ln -s "$path" "$sandbox/$cmd"; fi
     done
     # Ensure pwsh is also absent so the optional pwsh branch is skipped.
