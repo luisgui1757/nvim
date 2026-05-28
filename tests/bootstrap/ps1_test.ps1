@@ -52,6 +52,10 @@ Describe "bootstrap.ps1" {
         $lazy = Get-Item (Join-Path $env:LOCALAPPDATA 'lazygit/config.yml')
         $lazy.LinkType | Should -Be 'SymbolicLink'
         $lazy.Target  | Should -Match 'lazygit\\config\.yml$'
+
+        $statusPs1 = Get-Item (Join-Path $env:USERPROFILE '.claude/statusline-command.ps1')
+        $statusPs1.LinkType | Should -Be 'SymbolicLink'
+        $statusPs1.Target | Should -Match 'claude\\statusline-command\.ps1$'
     }
 
     It "re-running is idempotent (no new backups)" {

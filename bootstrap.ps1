@@ -213,11 +213,11 @@ New-SymLink -Source (Join-Path $RepoRoot 'shells\powershell_profile.ps1') -Desti
 
 # Claude Code settings (repo root claude/, not under nvim/). New-SymLink
 # creates %USERPROFILE%\.claude\ if absent and backs up any prior file/link.
-# Note: statusline-command.sh is a bash script -- it only runs under
-# Git-Bash / WSL on Windows; settings.json itself is the portable part.
+# The statusline command prefers pwsh when available and falls back to bash.
 $claudeDir = Join-Path $env:USERPROFILE '.claude'
 New-SymLink -Source (Join-Path $RepoRoot 'claude\settings.json')         -Destination (Join-Path $claudeDir 'settings.json')
 New-SymLink -Source (Join-Path $RepoRoot 'claude\statusline-command.sh') -Destination (Join-Path $claudeDir 'statusline-command.sh')
+New-SymLink -Source (Join-Path $RepoRoot 'claude\statusline-command.ps1') -Destination (Join-Path $claudeDir 'statusline-command.ps1')
 
 # lazygit config -- %LOCALAPPDATA%\lazygit\config.yml on Windows. lazygit
 # v0.58 reads its config from %LOCALAPPDATA%\lazygit, NOT %APPDATA%\lazygit

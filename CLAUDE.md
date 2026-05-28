@@ -18,8 +18,9 @@ the installer creates that path as a symlink **pointing into** the repo, so a
 repo there would self-overlap (the self-link guard refuses this).
 
 Claude Code settings live under `claude/` at the **repo root** — NOT under
-`nvim/claude/`. `~/.claude/settings.json` and `~/.claude/statusline-command.sh`
-symlink to `claude/settings.json` and `claude/statusline-command.sh`. (A stale
+`nvim/claude/`. `~/.claude/settings.json`, `~/.claude/statusline-command.sh`,
+and `~/.claude/statusline-command.ps1` symlink to the matching files under
+`claude/`. (A stale
 pre-restructure layout routed `~/.claude/settings.json` through
 `~/.config/nvim/claude/` — that indirection is deprecated; bootstrap now links
 `claude/` directly.)

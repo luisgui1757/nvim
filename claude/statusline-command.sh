@@ -4,7 +4,7 @@
 
 input=$(cat)
 
-cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty' | xargs basename)
+cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty | gsub("\\\\"; "/") | split("/") | last')
 model=$(echo "$input" | jq -r '.model.display_name // empty')
 used=$(echo "$input" | jq -r '.context_window.current_usage.input_tokens // empty')
 total=$(echo "$input" | jq -r '.context_window.context_window_size // empty')
