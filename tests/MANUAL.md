@@ -37,12 +37,13 @@ significant change to the relevant area.
       without "Failed to format" toast.
 - [ ] **PowerShell .ps1**: powershell_es attaches; signature help works.
 
-## Bootstrap on a fresh machine
+## Setup on a fresh machine
 
-- [ ] **New Mac**: `git clone`, `./bootstrap.sh`, `exec zsh`, `nvim` opens
+- [ ] **New Mac**: `git clone`, `./setup.sh`, `exec zsh`, `nvim` opens
       and `:checkhealth` is clean except for optional system tools.
-- [ ] **Fresh Windows**: clone, `.\bootstrap.ps1 -MergeWindowsTerminal`,
+- [ ] **Fresh Windows**: clone, `.\setup.ps1`, optionally
+      `.\bootstrap.ps1 -MergeWindowsTerminal`,
       new pwsh tab shows the rose-pine starship prompt; new WT tab has
       the rose-pine scheme; `nvim` works.
-- [ ] **Fresh WSL Ubuntu**: clone, `./bootstrap.sh`, `nvim` works;
+- [ ] **Fresh WSL Ubuntu**: clone, `./setup.sh`, `nvim` works;
       clipboard from WSL → Windows works via `win32yank.exe`.
