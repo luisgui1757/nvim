@@ -24,7 +24,7 @@ unset _dotfiles_locale
 # $HOMEBREW_PREFIX is set by `brew shellenv`; if not in the environment yet,
 # probe common locations rather than failing.
 if [[ -z "${HOMEBREW_PREFIX:-}" ]]; then
-  for candidate in /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
+  for candidate in /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew "$HOME/.linuxbrew"; do
     if [[ -x "$candidate/bin/brew" ]]; then
       eval "$($candidate/bin/brew shellenv)"
       break
