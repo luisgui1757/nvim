@@ -309,8 +309,10 @@ seams. Unset in normal runs, so it's skipped.
 
 ## Things that look weird but are intentional
 
-- **Mouse is disabled in nvim** (`vim.opt.mouse = ""`). User preference;
-  do not "fix".
+- **Mouse is disabled in nvim AND tmux** (`vim.opt.mouse = ""` and
+  `set -g mouse off`). User preference -- keyboard-only, no accidental
+  selection/scroll behaviors stealing focus across panes. Do not "fix".
+  Guarded for tmux by `tests/tmux/option_test.sh` (`check mouse off`).
 - **Arrow keys are mapped to `<Nop>`** in `vim-options.lua`. User
   preference; hjkl-only navigation enforced.
 - **`vim.opt.clipboard = "unnamedplus"`** even on macOS — works fine via
