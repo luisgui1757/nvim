@@ -13,9 +13,8 @@ fi
 # bash 3.2 compatible — `mapfile` is bash 4+).
 sh_files=()
 while IFS= read -r f; do sh_files+=("$f"); done < <(
-    find . -type f -name "*.sh" -not -path "./.git/*"
+    find . -type f -name "*.sh" -not -path "./.git/*" -not -path "./tests/.cache/*"
 )
-sh_files+=("./bootstrap.sh")
 
 shellcheck --shell=bash "${sh_files[@]}" || exit 1
 
