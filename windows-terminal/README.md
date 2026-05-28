@@ -28,37 +28,13 @@ What's intentionally **not** in the fragment: anything WT auto-generates
 (`profiles.list[]`, `defaultProfile` GUID, the per-machine VS / Ubuntu / Azure
 entries).
 
-## One-shot merge (PowerShell)
+## Merge
 
 ```powershell
-$wtSettings = Resolve-Path "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_*\LocalState\settings.json"
-$fragment = Get-Content -Raw -Path windows-terminal\settings.fragment.jsonc |
-            ForEach-Object { $_ -replace '(?ms)^\s*//.*?$', '' } |
-            ConvertFrom-Json
-
-$current = Get-Content -Raw -Path $wtSettings | ConvertFrom-Json
-
-# Top-level scalars. Keep the array on one line — PS 5.1 rejects both
-# comma-continuation AND newline-separated string literals inside @() in
-# an assignment expression. The one-line form parses cleanly in 5.1 + 7.
-$topLevelKeys = @('copyFormatting','copyOnSelect','firstWindowPreference','initialRows','theme','useAcrylicInTabRow','windowingBehavior')
-foreach ($key in $topLevelKeys) {
-    if ($null -ne $fragment.$key) { $current.$key = $fragment.$key }
-}
-
-# Defaults, actions, schemes, themes (replace these sections wholesale)
-$current.profiles.defaults = $fragment.profiles.defaults
-$current.actions  = $fragment.actions
-$current.schemes  = $fragment.schemes
-$current.themes   = $fragment.themes
-
-# Atomic write
-$tmp = "$wtSettings.tmp"
-$current | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $tmp -Encoding UTF8
-Move-Item -Force -LiteralPath $tmp -Destination $wtSettings
+.\bootstrap.ps1 -MergeWindowsTerminal
 ```
 
-`bootstrap.ps1` will offer to run this merge for you, with a backup of the
-pre-merge `settings.json` saved as `settings.json.bak.<timestamp>`. It preserves
-custom `actions`, `schemes`, and `themes`, while entries with the same key or
-name are replaced by the repo fragment.
+`bootstrap.ps1` backs up the pre-merge `settings.json` as
+`settings.json.bak.<timestamp>`, initializes missing `profiles` containers, and
+preserves custom `actions`, `schemes`, and `themes`, while entries with the same
+key or name are replaced by the repo fragment.
