@@ -227,4 +227,31 @@ Describe "bootstrap.ps1 -MergeWindowsTerminal" {
         ($merged.actions | Where-Object { $_.keys -eq 'ctrl+c' }).command.action | Should -Be 'copy'
         ($merged.actions | Where-Object { $_.command -eq 'userOnly' }).keys | Should -Be 'ctrl+u'
     }
+
+    It "replaces mixed scalar and array action overlaps while preserving unrelated actions" {
+        @"
+{
+    "profiles": { "defaults": {}, "list": [] },
+    "actions": [
+        { "command": "oldCopy", "keys": "ctrl+c" },
+        { "command": "oldPaste", "keys": ["ctrl+v", "alt+v"] },
+        { "command": "userOnly", "keys": "ctrl+u" }
+    ],
+    "schemes": [],
+    "themes": []
+}
+"@ | Set-Content -LiteralPath $script:WTSettings -Encoding UTF8
+
+        & $script:Bootstrap -MergeWindowsTerminal | Out-Null
+
+        $merged = Get-Content -Raw -LiteralPath $script:WTSettings | ConvertFrom-Json
+        ($merged.actions | Where-Object { $_.command -eq 'oldCopy' }) | Should -BeNullOrEmpty
+        ($merged.actions | Where-Object { $_.keys -eq 'ctrl+c' }).command.action | Should -Be 'copy'
+        ($merged.actions | Where-Object { $_.command -eq 'oldPaste' }) | Should -BeNullOrEmpty
+        ($merged.actions | Where-Object { $_.keys -eq 'alt+v' }) | Should -BeNullOrEmpty
+        ($merged.actions | Where-Object { $_.keys -eq 'ctrl+v' }).command | Should -Be 'paste'
+        ($merged.actions | Where-Object { $_.command -eq 'userOnly' }).keys | Should -Be 'ctrl+u'
+        ($merged.actions | Where-Object { $_.keys -eq 'ctrl+shift+f' }).command | Should -Be 'find'
+        ($merged.actions | Where-Object { $_.keys -eq 'ctrl+t' }).command.action | Should -Be 'newTab'
+    }
 }
