@@ -121,7 +121,7 @@ phase() {
 # ---- Phase 1: dependencies ---------------------------------------------------
 if [[ "$SKIP_DEPS" -eq 0 ]]; then
     phase "Phase 1/4: install dependencies"
-    bash "$SCRIPT_DIR/install-deps.sh" "${DEPS_FLAGS[@]}"
+    bash "$SCRIPT_DIR/install-deps.sh" ${DEPS_FLAGS[@]+"${DEPS_FLAGS[@]}"}
 else
     echo
     echo "skipped: Phase 1 (deps) via --skip-deps"
@@ -130,7 +130,7 @@ fi
 # ---- Phase 2: symlink configs ------------------------------------------------
 if [[ "$SKIP_BOOTSTRAP" -eq 0 ]]; then
     phase "Phase 2/4: symlink configs into place"
-    bash "$SCRIPT_DIR/bootstrap.sh" "${BOOTSTRAP_FLAGS[@]}"
+    bash "$SCRIPT_DIR/bootstrap.sh" ${BOOTSTRAP_FLAGS[@]+"${BOOTSTRAP_FLAGS[@]}"}
 else
     echo
     echo "skipped: Phase 2 (bootstrap) via --skip-bootstrap"
