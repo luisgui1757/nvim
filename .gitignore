@@ -9,7 +9,7 @@ tests/**/tmp/
 # Backup files produced by the bootstrap scripts
 *.bak.*
 
-# Claude Code local state -- per CLAUDE.md, .claude/ (dotted) is local-only
-# (sessions, scheduled-task locks, etc.); the synced settings live in claude/
-# (no dot) at the repo root. Anything that lands here is per-machine noise.
+# Claude Code local state -- per-machine sessions, scheduled-task locks, etc.
+# This repo no longer ships a synced claude/ folder; preferences live here only
+# locally. Anything that lands in .claude/ is per-machine noise.
 .claude/
