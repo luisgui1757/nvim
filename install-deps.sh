@@ -444,27 +444,27 @@ install_nvim_linux() {
     if ! curl -fsSL "$url" -o "$tarball"; then
         echo "  FAIL: nvim download failed from $url"
         rm -rf "$tmp"
-        return
+        return 1
     fi
     if ! verify_sha256 "$tarball" "$expected"; then
         echo "  FAIL: checksum mismatch for $asset"
         rm -rf "$tmp"
-        return
+        return 1
     fi
     if ! maybe_sudo rm -rf "$install_dir"; then
         echo "  FAIL: could not clear $install_dir"
         rm -rf "$tmp"
-        return
+        return 1
     fi
     if ! maybe_sudo tar -xzf "$tarball" -C /opt; then
         echo "  FAIL: could not extract $asset into /opt"
         rm -rf "$tmp"
-        return
+        return 1
     fi
     if ! maybe_sudo ln -sfn "$install_dir/bin/nvim" /usr/local/bin/nvim; then
         echo "  FAIL: could not link /usr/local/bin/nvim"
         rm -rf "$tmp"
-        return
+        return 1
     fi
     rm -rf "$tmp"
     printf "  installed %-26s -> %s/bin/nvim\n" "nvim" "$install_dir"
@@ -485,52 +485,6 @@ install_ghostty_macos() {
     fi
     brew install --cask ghostty || echo "  WARN: ghostty cask install failed"
 }
-
-# Test seam: `INSTALL_DEPS_SOURCE_ONLY=1 source install-deps.sh` defines the
-# functions above (so tests/shell/default_shell_test.sh can exercise the
-# login-shell decision logic) WITHOUT running any package installs.
-if [[ -n "${INSTALL_DEPS_SOURCE_ONLY:-}" ]]; then
-    # shellcheck disable=SC2317  # the exit is reached only when executed, not sourced
-    return 0 2>/dev/null || exit 0
-fi
-
-PM="$(detect_pm)"
-OS_LABEL="$(uname -s)"
-if is_wsl; then OS_LABEL="WSL ($OS_LABEL)"; fi
-
-# Bootstrap brew if asked. Re-detect after.
-if [[ "$PM" == "brew_missing" ]]; then
-    if maybe_install_brew; then PM="$(detect_pm)"
-    else PM="unknown"; fi
-elif [[ "$PM" != "brew" && "$(uname -s)" == "Linux" ]]; then
-    echo "Detected $PM as the system package manager."
-    if maybe_install_brew; then PM="$(detect_pm)"; fi
-fi
-
-if [[ "$PM" == "unknown" ]]; then
-    echo "install-deps: no supported package manager found." >&2
-    echo "  Supported: brew (mac/Linux), apt (Debian/Ubuntu), dnf (Fedora)," >&2
-    echo "             pacman (Arch), zypper (openSUSE), apk (Alpine)." >&2
-    exit 1
-fi
-
-echo "install-deps: OS=$OS_LABEL  package manager=$PM  dry-run=$DRY_RUN  yes-all=$YES_ALL"
-echo
-
-# One-shot "install everything" vs the per-item prompts. Skipped when --all was
-# already passed, and when there's no tty to read from (e.g. curl | bash).
-# Enter / Y == everything (recommended); n == choose per tool.
-if [[ "$YES_ALL" -ne 1 && "$DRY_RUN" -ne 1 && -t 0 ]]; then
-    printf "Install EVERYTHING without further prompts? [Y/n]  (n = choose per tool) "
-    if IFS= read -r _all_ans && [[ "$_all_ans" =~ ^[Nn] ]]; then
-        echo "  -> per-item prompts"
-    else
-        YES_ALL=1
-        echo "  -> installing everything; no further prompts"
-    fi
-    unset _all_ans
-    echo
-fi
 
 # ---- Package-name resolution (Bash 3.2-safe, no associative arrays) ----------
 #
@@ -686,11 +640,11 @@ install_nerd_font() {
     local tmp; tmp="$(mktemp -d)"
     if ! curl -fL -o "$tmp/Hack.zip" "$url"; then
         echo "  FAIL: download failed; install Hack Nerd Font manually from nerd-fonts releases"
-        rm -rf "$tmp"; return
+        rm -rf "$tmp"; return 1
     fi
     if ! verify_sha256 "$tmp/Hack.zip" "$HACK_NERD_FONT_SHA256"; then
         echo "  FAIL: checksum mismatch for Hack.zip"
-        rm -rf "$tmp"; return
+        rm -rf "$tmp"; return 1
     fi
     mkdir -p "$font_dir"
     if have unzip; then
@@ -699,7 +653,7 @@ install_nerd_font() {
         bsdtar -xf "$tmp/Hack.zip" -C "$font_dir"
     else
         echo "  FAIL: need 'unzip' or 'bsdtar' to extract the font archive"
-        rm -rf "$tmp"; return
+        rm -rf "$tmp"; return 1
     fi
     rm -rf "$tmp"
     if have fc-cache; then
@@ -859,6 +813,51 @@ check_wsl_clipboard() {
     echo "            Then it must be on the WSL PATH (typical: it appears"
     echo "            automatically once installed via scoop)."
 }
+
+# Test seam: `INSTALL_DEPS_SOURCE_ONLY=1 source install-deps.sh` defines the
+# installer functions WITHOUT running any package installs.
+if [[ -n "${INSTALL_DEPS_SOURCE_ONLY:-}" ]]; then
+    # shellcheck disable=SC2317  # the exit is reached only when executed, not sourced
+    return 0 2>/dev/null || exit 0
+fi
+
+PM="$(detect_pm)"
+OS_LABEL="$(uname -s)"
+if is_wsl; then OS_LABEL="WSL ($OS_LABEL)"; fi
+
+# Bootstrap brew if asked. Re-detect after.
+if [[ "$PM" == "brew_missing" ]]; then
+    if maybe_install_brew; then PM="$(detect_pm)"
+    else PM="unknown"; fi
+elif [[ "$PM" != "brew" && "$(uname -s)" == "Linux" ]]; then
+    echo "Detected $PM as the system package manager."
+    if maybe_install_brew; then PM="$(detect_pm)"; fi
+fi
+
+if [[ "$PM" == "unknown" ]]; then
+    echo "install-deps: no supported package manager found." >&2
+    echo "  Supported: brew (mac/Linux), apt (Debian/Ubuntu), dnf (Fedora)," >&2
+    echo "             pacman (Arch), zypper (openSUSE), apk (Alpine)." >&2
+    exit 1
+fi
+
+echo "install-deps: OS=$OS_LABEL  package manager=$PM  dry-run=$DRY_RUN  yes-all=$YES_ALL"
+echo
+
+# One-shot "install everything" vs the per-item prompts. Skipped when --all was
+# already passed, and when there's no tty to read from (e.g. curl | bash).
+# Enter / Y == everything (recommended); n == choose per tool.
+if [[ "$YES_ALL" -ne 1 && "$DRY_RUN" -ne 1 && -t 0 ]]; then
+    printf "Install EVERYTHING without further prompts? [Y/n]  (n = choose per tool) "
+    if IFS= read -r _all_ans && [[ "$_all_ans" =~ ^[Nn] ]]; then
+        echo "  -> per-item prompts"
+    else
+        YES_ALL=1
+        echo "  -> installing everything; no further prompts"
+    fi
+    unset _all_ans
+    echo
+fi
 
 # ---- Sections ----------------------------------------------------------------
 section() { echo; echo "== $1 =="; }

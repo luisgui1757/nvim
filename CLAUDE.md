@@ -364,10 +364,10 @@ not passwd files, and `chsh` works there). The textbook chsh path is unchanged
 for local accounts.
 
 **Test seam — leave it:** the line `if [[ -n "${INSTALL_DEPS_SOURCE_ONLY:-}" ]];
-then return …` near the middle of `install-deps.sh` exists ONLY so
-`tests/shell/default_shell_test.sh` can `source` the function defs (without
-running any installs) and exercise the chsh decision logic against stubbed
-seams. Unset in normal runs, so it's skipped.
+then return …` before the main install sections in `install-deps.sh` exists ONLY
+so shell tests can `source` the installer function defs (without running any
+installs) and exercise them against stubbed seams. Unset in normal runs, so it's
+skipped.
 
 ## Things that look weird but are intentional
 
