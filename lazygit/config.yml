@@ -4,35 +4,23 @@
 #
 # Windows path was %APPDATA% in earlier commits but lazygit v0.58 actually
 # reads from %LOCALAPPDATA% (verified via `lazygit --print-config-dir`).
-# Symlinking to the wrong path silently dropped EVERY custom keybinding,
-# which is why even F-key fallbacks looked dead inside psmux.
 #
 # Why a config file at all: under psmux (ConPTY tmux clone on Windows) the
-# default `<ctrl+j>` / `<ctrl+k>` "move commit down/up" bindings don't fire.
+# default `<ctrl+j>` / `<ctrl+k>` "move commit down/up" bindings do not fire.
 # Ctrl+J is ASCII LF (0x0A) -- the same byte as Enter -- so the wire needs
 # Win32-input-mode (DECSET 9001), modifyOtherKeys, or the kitty keyboard
 # protocol to disambiguate. Windows Terminal supports Win32-input-mode and
 # lazygit's tcell/v3 can decode it, but psmux v3.3.4 does not relay the
 # escape sequence through to the inner app, so lazygit just sees Enter.
 #
-# Fix: keep the default Ctrl+J/K bindings AND add Alt+J/K + Alt+Down/Up
-# fallbacks. Alt+letter is the old Meta/ESC-prefix path (sent as ESC <letter>
-# on the wire) and is unambiguous everywhere -- including through ConPTY +
-# psmux. The default bindings stay live, so on Unix tmux (where extended-keys
-# in tmux.conf relays modifyOtherKeys) Ctrl+J/K still works as expected.
-#
-# Source: psmux configuration docs (no extended-keys/Win32-input-mode support
-# documented for v3.3.4); Microsoft Terminal VtIo.cpp (Win32-input-mode
-# emitter); lazygit Custom_Keybindings.md (array-form binding syntax).
+# Fix: override the binding to Alt+J / Alt+K. Alt+letter is the old
+# Meta/ESC-prefix path (sent as ESC <letter> on the wire) and is unambiguous
+# everywhere -- through ConPTY + psmux on Windows, and through real tmux on
+# Unix. lazygit's MoveDownCommit / MoveUpCommit are typed as `string` (not
+# `[]string`), so multi-key arrays do not parse -- we pick the most portable
+# single key. The trade-off: Unix muscle-memory Ctrl+J is replaced by Alt+J
+# for these two actions; every other Ctrl-prefixed lazygit binding still works.
 keybinding:
   commits:
-    # Layered fallbacks. Modifier-prefixed first because they are the canonical
-    # lazygit keys on every other platform; F8/F7 last as the bare-key fallback
-    # for psmux/ConPTY combos where Alt/Ctrl get re-encoded or eaten. NOTE:
-    # F-keys are encoded escape sequences, NOT raw scancodes -- multiplexers
-    # CAN strip/alter them. If F8 still does nothing after the config landed
-    # at %LOCALAPPDATA%\lazygit, check psmux's own root bindings with
-    # `psmux list-keys -T root | rg 'F7|F8'` and add `unbind-key -n F7` etc.
-    # to tmux.windows.conf.
-    moveDownCommit: [<ctrl+j>, <alt+j>, <alt+down>, <f8>]
-    moveUpCommit: [<ctrl+k>, <alt+k>, <alt+up>, <f7>]
+    moveDownCommit: <alt+j>
+    moveUpCommit: <alt+k>
