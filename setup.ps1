@@ -59,7 +59,7 @@ if (-not $ScriptDir -or -not (Test-Path (Join-Path $ScriptDir 'bootstrap.ps1')))
         exit 0
     }
     if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-        Write-Error "setup.ps1: git is required to clone the repo. Install git first (e.g. winget install Git.Git)."
+        Write-Error "setup.ps1: git is the only prerequisite for remote bootstrap, and it is required to clone the repo. Install git first: winget install Git.Git"
         exit 1
     }
     if (Test-Path (Join-Path $dest '.git')) {

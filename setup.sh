@@ -63,7 +63,12 @@ if [[ -z "$SCRIPT_DIR" ]] || [[ ! -f "$SCRIPT_DIR/bootstrap.sh" ]]; then
         exit 0
     fi
     if ! command -v git >/dev/null 2>&1; then
-        echo "setup.sh: git is required to clone the repo. Install git first." >&2
+        git_hint="apt install git"
+        if [[ "$(uname -s)" == "Darwin" ]]; then
+            git_hint="brew install git"
+        fi
+        echo "setup.sh: git is the only prerequisite for remote bootstrap, and it is required to clone the repo." >&2
+        echo "setup.sh: install git first: $git_hint" >&2
         exit 1
     fi
     if [[ -d "$DEST/.git" ]]; then

@@ -209,6 +209,10 @@ save only**. The next plain `:w` formats normally. Implemented in
   Tested by `tests/bootstrap/sh_test.bats` (and `ps1_test.ps1` on Windows).
 - `bootstrap.sh` does not require git; it only creates symlinks. `setup.sh`
   owns cloning and pull/update behavior before bootstrap runs.
+- Remote `setup.{sh,ps1}` has exactly one hard prerequisite: `git`, because the
+  remote path must clone this repo before it can install everything else. The
+  missing-git errors name the canonical first install command (`brew install
+  git`, `apt install git`, or `winget install Git.Git`).
 - Pre-existing non-symlink targets are backed up to
   `<target>.bak.<timestamp>` (with `.1`, `.2`, … suffixes if a collision
   exists). Backups are never overwritten. New symlinks are staged as

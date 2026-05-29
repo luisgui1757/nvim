@@ -39,8 +39,10 @@ them and run `setup`.
 ### One-shot, from scratch (recommended)
 
 No checkout needed. `setup.{sh,ps1}` clones the repo to `~/dotfiles`
-(or `%USERPROFILE%\dotfiles` on Windows), installs every dependency,
-symlinks every config, and finishes with `:Lazy! sync` +
+(or `%USERPROFILE%\dotfiles` on Windows). **Git is the only hard prerequisite
+for remote bootstrap** because setup needs it to clone the repo; every other
+repo-managed dependency is installed by `setup`. It symlinks every config and
+finishes with `:Lazy! sync` +
 `:MasonToolsInstallSync` so LSP servers and formatters are downloaded
 before nvim even opens.
 
