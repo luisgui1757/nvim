@@ -7,8 +7,8 @@ script works, read this too.
 ## What this repo is
 
 Cross-platform dotfiles: Neovim (lazy.nvim), Starship, Ghostty, Windows
-Terminal, tmux, zshrc, PowerShell profile, Claude Code settings. Single source
-of truth — `bootstrap.sh` (macOS / Linux / WSL) and `bootstrap.ps1` (Windows)
+Terminal, tmux, zshrc, PowerShell profile, lazygit. Single source of truth —
+`bootstrap.sh` (macOS / Linux / WSL) and `bootstrap.ps1` (Windows)
 symlink everything into OS-appropriate locations. The bootstrap scripts are
 **location-independent** (they resolve `$REPO_ROOT` / `$RepoRoot` from their own
 path), so the repo can live anywhere — `~/dotfiles/`, `~/Documents/dotfiles/`,

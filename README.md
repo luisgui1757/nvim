@@ -56,10 +56,6 @@ iwr https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.ps1 -OutFi
 .\setup.ps1 -All
 ```
 
-For Claude Code on native Windows, install Git Bash or WSL so `bash` is on
-`PATH`. The synced statusline command intentionally stays one shared Bash
-invocation instead of rewriting `settings.json` per OS.
-
 If Developer Mode is unavailable AND you cannot enable it, run JUST
 `bootstrap.ps1` from an elevated PowerShell; do NOT elevate `setup.ps1` --
 scoop refuses admin.
