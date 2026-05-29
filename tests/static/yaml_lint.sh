@@ -3,7 +3,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 export REPO_ROOT
 
-files=$(find "$REPO_ROOT" -type f \( -name "*.yml" -o -name "*.yaml" \) -not -path "*/.git/*")
+files=$(find "$REPO_ROOT" -type f \( -name "*.yml" -o -name "*.yaml" \) -not -path "*/.git/*" -not -path "*/tests/.cache/*")
 [[ -z "$files" ]] && { echo "no yaml files"; exit 0; }
 
 if command -v yamllint >/dev/null 2>&1; then

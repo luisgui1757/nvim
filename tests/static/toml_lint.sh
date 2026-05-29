@@ -2,7 +2,7 @@
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 
-files=$(find "$REPO_ROOT" -type f -name "*.toml" -not -path "*/.git/*")
+files=$(find "$REPO_ROOT" -type f -name "*.toml" -not -path "*/.git/*" -not -path "*/tests/.cache/*")
 [[ -z "$files" ]] && { echo "no toml files"; exit 0; }
 
 if command -v taplo >/dev/null 2>&1; then
