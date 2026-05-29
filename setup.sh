@@ -27,6 +27,23 @@ SKIP_DEPS=0
 SKIP_BOOTSTRAP=0
 SKIP_NVIM=0
 BEST_EFFORT=0
+usage() {
+    cat <<'EOF'
+setup.sh -- one-shot end-to-end install for macOS / Linux / WSL.
+
+Local usage:
+  ./setup.sh                     interactive: one prompt, then end-to-end
+  ./setup.sh --all               non-interactive: install everything missing
+  ./setup.sh --dry-run           preview every step
+  ./setup.sh --skip-deps         already installed; just bootstrap + sync
+  ./setup.sh --skip-bootstrap    already symlinked; just sync plugins + LSP
+  ./setup.sh --skip-nvim         skip nvim plugin + Mason sync
+
+Remote usage:
+  curl -fsSL https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.sh | bash -s -- --all
+EOF
+}
+
 for arg in "$@"; do
     case "$arg" in
         --all|-y)         ALL=1 ;;
@@ -35,7 +52,7 @@ for arg in "$@"; do
         --skip-bootstrap) SKIP_BOOTSTRAP=1 ;;
         --skip-nvim)      SKIP_NVIM=1 ;;
         --best-effort)    BEST_EFFORT=1 ;;
-        -h|--help)        sed -n '2,18p' "$0"; exit 0 ;;
+        -h|--help)        usage; exit 0 ;;
         *) echo "Unknown arg: $arg" >&2; exit 2 ;;
     esac
 done

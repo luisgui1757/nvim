@@ -78,7 +78,7 @@ $Catalog = @{
     make                 = @{ winget = 'GnuWin32.Make';                    choco = 'make';                 scoop = 'make'                 ; purpose = 'plugin builds (LuaSnip jsregexp)' }
     pwsh                 = @{ winget = 'Microsoft.PowerShell';             choco = 'powershell-core';      scoop = 'pwsh'                 ; purpose = 'modern PowerShell 7' }
     'win32yank'          = @{ winget = '';                                 choco = 'win32yank';            scoop = 'win32yank'            ; purpose = 'clipboard bridge for WSL nvim' }
-    node                 = @{ winget = 'OpenJS.NodeJS.LTS';                choco = 'nodejs-lts';           scoop = 'nodejs-lts'           ; purpose = 'prettier + markdown-preview' }
+    node                 = @{ winget = 'OpenJS.NodeJS.LTS';                choco = 'nodejs-lts';           scoop = 'nodejs-lts'           ; purpose = 'prettier + JS tooling' }
     python               = @{ winget = 'Python.Python.3.12';               choco = 'python';               scoop = 'python'               ; purpose = 'pyright + tooling' }
     jq                   = @{ winget = 'jqlang.jq';                        choco = 'jq';                   scoop = 'jq'                   ; purpose = 'general-purpose JSON CLI' }
     shellcheck           = @{ winget = 'koalaman.shellcheck';              choco = 'shellcheck';           scoop = 'shellcheck'           ; purpose = 'shell-script linter' }
@@ -452,10 +452,10 @@ if ($script:InstallFailures.Count -gt 0) {
     Write-Host "install the listed packages manually."
     if ($DryRun) { Write-Host "(dry run -- nothing was actually attempted)" }
     Write-Host ""
-    Write-Host "Next: run .\bootstrap.ps1 to symlink configs into place."
+    Write-Host "Next: run .\setup.ps1, or let setup.ps1 continue if it invoked this phase."
     exit 1
 }
 Write-Host "install-deps: done"
 if ($DryRun) { Write-Host "(dry run -- nothing was installed)" }
 Write-Host ""
-Write-Host "Next: run .\bootstrap.ps1 to symlink configs into place."
+Write-Host "Next: run .\setup.ps1, or let setup.ps1 continue if it invoked this phase."

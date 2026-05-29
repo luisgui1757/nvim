@@ -939,7 +939,7 @@ install_nerd_font
 
 section "language tooling (for LSP / formatter back-ends)"
 install python3 "needed by pyright"
-install node "needed by prettier, markdown-preview"
+install node "needed by prettier and JS tooling"
 
 if is_wsl; then
     section "WSL clipboard bridge"
@@ -966,4 +966,4 @@ echo
 echo "install-deps: done"
 if [[ "$DRY_RUN" -eq 1 ]]; then echo "(dry run -- nothing was installed)"; fi
 echo
-echo "Next: run ./bootstrap.sh to symlink configs into place."
+echo "Next: run ./setup.sh, or let setup.sh continue if it invoked this phase."

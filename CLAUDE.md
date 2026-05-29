@@ -1,25 +1,26 @@
-# Repo guide for Claude (and humans coming back to this cold)
+# Repo guide for coding agents (and humans coming back to this cold)
 
-This file is the on-ramp. If you're a future Claude session, read this **before**
-touching anything. If you're me six months from now and forgot how the install
-script works, read this too.
+This file is the on-ramp. If you're a future coding-agent session, read this
+**before** touching anything. If you're me six months from now and forgot how
+the install script works, read this too.
 
 ## What this repo is
 
 Cross-platform dotfiles: Neovim (lazy.nvim), Starship, Ghostty, Windows
-Terminal, tmux, zshrc, PowerShell profile, lazygit. Single source of truth —
-`bootstrap.sh` (macOS / Linux / WSL) and `bootstrap.ps1` (Windows)
-symlink everything into OS-appropriate locations. The bootstrap scripts are
-**location-independent** (they resolve `$REPO_ROOT` / `$RepoRoot` from their own
-path), so the repo can live anywhere — `~/dotfiles/`, `~/Documents/dotfiles/`,
-etc. The remote-clone default in `setup.{sh,ps1}` is `~/dotfiles/`, but an
-in-place clone elsewhere works too. Do NOT put the repo at `~/.config/nvim/` —
-the installer creates that path as a symlink **pointing into** the repo, so a
-repo there would self-overlap (the self-link guard refuses this).
+Terminal, tmux, zshrc, PowerShell profile, lazygit. Public installs go through
+`setup.sh` (macOS / Linux / WSL) or `setup.ps1` (Windows), which install
+dependencies, symlink configs, and sync Neovim plugins + Mason tools. The
+underlying bootstrap scripts are **location-independent** (they resolve
+`$REPO_ROOT` / `$RepoRoot` from their own path), so the repo can live anywhere —
+`~/dotfiles/`, `~/Documents/dotfiles/`, etc. The remote-clone default in
+`setup.{sh,ps1}` is `~/dotfiles/`, but an in-place clone elsewhere works too.
+Do NOT put the repo at `~/.config/nvim/` — the installer creates that path as a
+symlink **pointing into** the repo, so a repo there would self-overlap (the
+self-link guard refuses this).
 
-Claude Code settings are intentionally **NOT** synced through this repo. Keep
-your Claude Code preferences in `~/.claude/` (Claude's local state dir) per
-machine; this repo does not ship a `claude/` folder.
+Agent settings are intentionally **NOT** synced through this repo. Keep local
+agent preferences in the agent's per-machine state directory; this repo does
+not ship synced agent preference folders.
 
 ## Layout at a glance
 
@@ -34,18 +35,20 @@ machine; this repo does not ship a `claude/` folder.
 ├── lazygit/               config.yml (J/K move-commit binding)
 ├── tests/                 automated tests, grouped by tool
 ├── .github/workflows/     CI matrix: ubuntu / macos / windows
-├── bootstrap.sh           macOS/Linux/WSL installer (idempotent)
-├── bootstrap.ps1          Windows installer (idempotent)
-├── Makefile               `make test`, `make install`, `make dryrun`, `make lint`
-├── .editorconfig          formatting rules every editor + Claude respects
+├── setup.sh               public macOS/Linux/WSL setup entry point
+├── setup.ps1              public Windows setup entry point
+├── bootstrap.sh           setup phase: Unix symlinks (idempotent)
+├── bootstrap.ps1          setup phase: Windows symlinks (idempotent)
+├── test.ps1               Windows test entry point
+├── Makefile               Unix `make setup`, `make test`, `make lint`
+├── .editorconfig          formatting rules every editor + agent respects
 ├── stylua.toml            Lua formatter style (Spaces / width 2); conform reads it
 ├── README.md              the human-facing install matrix
-└── CLAUDE.md              ← you are here
+└── CLAUDE.md              tracked coding-agent guide
 ```
 
-`.claude/` (with dot) is Claude Code's local state directory and is **not**
-part of the synced configuration — leave it alone. This repo no longer ships a
-`claude/` folder; Claude Code preferences live per-machine under `~/.claude/`.
+Local agent state directories such as `.claude/` are **not** part of the synced
+configuration. Leave them untracked; preferences live per machine.
 
 ## Non-negotiable invariants
 
@@ -182,10 +185,17 @@ make test-bootstrap  # bats coverage of bootstrap.sh idempotency
 make lint            # shellcheck across all .sh
 ```
 
+On Windows, use the same entry point as CI:
+
+```powershell
+.\test.ps1          # PSScriptAnalyzer + Pester + Nvim plenary busted
+```
+
 Sub-targets **skip gracefully** when their tool isn't installed
 (`yamllint`/`editorconfig-checker`/`hyperfine`/`bats`/`ghostty`). The
 ubuntu/macos/windows CI matrix in `.github/workflows/test.yml` installs
-everything, so anything passing locally + CI is genuinely cross-platform.
+everything, and `test.ps1` treats missing Windows test dependencies as fatal
+under CI, so anything passing locally + CI is genuinely cross-platform.
 
 When adding a new spec:
 - Plenary specs: drop a `*_spec.lua` under `tests/nvim/spec/`. Use plenary
@@ -502,7 +512,8 @@ skipped.
 
 ## When you're about to make a change
 
-1. Run `make test` locally. Get baseline.
+1. Run the local test entry point (`make test` on macOS/Linux/WSL,
+   `.\test.ps1` on Windows). Get baseline.
 2. Make the change.
 3. Update tests in the same diff (add a regression test for the new
    behavior; update an invariant assertion if you changed something this
@@ -510,7 +521,7 @@ skipped.
 4. Update this CLAUDE.md if you've changed any of the invariants or added a
    new common workflow.
 5. Update `README.md` if you've changed the install path / install command.
-6. Run `make test` again. Green.
+6. Run the local test entry point again. Green.
 7. Stage everything, commit.
 
 If a test breaks: fix the cause, not the test. The test names are
@@ -519,6 +530,6 @@ carefully before "fixing" the test.
 
 ## Plan / history
 
-The full design rationale that drove the current layout is at
-`~/.claude/plans/this-directory-has-my-idempotent-seahorse.md`. If
-something feels arbitrary, the plan file likely has the why.
+The durable rationale belongs in this file, `README.md`, or the tests that
+guard an invariant. Do not rely on private local plan files for public repo
+maintenance.
