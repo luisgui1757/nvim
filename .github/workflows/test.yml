@@ -194,4 +194,11 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          nvim --headless -u tests/nvim/minimal_init.lua -c "PlenaryBustedDirectory tests/nvim/spec { minimal_init = 'tests/nvim/minimal_init.lua', sequential = true }" -c "quitall" 2>&1
+          # Do NOT pass `sequential = true` here -- Plenary's sequential
+          # harness on Windows misreads child job signal values as failure
+          # (test_harness.lua:147) and exits the parent with code 1 even
+          # when every child spec is green. The default (non-sequential)
+          # path checks child exit codes only (test_harness.lua:160-168).
+          # Also do not append `-c quitall` -- Plenary exits with `0cq` /
+          # `1cq` itself at test_harness.lua:172-178.
+          nvim --headless -u tests/nvim/minimal_init.lua -c "PlenaryBustedDirectory tests/nvim/spec { minimal_init = 'tests/nvim/minimal_init.lua' }" 2>&1
