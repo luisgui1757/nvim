@@ -217,4 +217,26 @@ Describe "bootstrap.ps1 -MergeWindowsTerminal" {
         ($merged.themes | Where-Object { $_.name -eq 'custom-theme' }) | Should -Not -BeNullOrEmpty
         ($merged.themes | Where-Object { $_.name -eq 'rose-pine' }).tab.background | Should -Be '#191724ff'
     }
+
+    It "replaces action arrays when any key overlaps the fragment" {
+        @"
+{
+    "profiles": { "defaults": {}, "list": [] },
+    "actions": [
+        { "command": "oldCopy", "keys": ["ctrl+c", "alt+c"] },
+        { "command": "userOnly", "keys": ["ctrl+u"] }
+    ],
+    "schemes": [],
+    "themes": []
+}
+"@ | Set-Content -LiteralPath $script:WTSettings -Encoding UTF8
+
+        & $script:Bootstrap -MergeWindowsTerminal | Out-Null
+
+        $merged = Get-Content -Raw -LiteralPath $script:WTSettings | ConvertFrom-Json
+        ($merged.actions | Where-Object { $_.command -eq 'oldCopy' }) | Should -BeNullOrEmpty
+        ($merged.actions | Where-Object { $_.keys -eq 'alt+c' }) | Should -BeNullOrEmpty
+        ($merged.actions | Where-Object { $_.keys -eq 'ctrl+c' }).command.action | Should -Be 'copy'
+        ($merged.actions | Where-Object { $_.command -eq 'userOnly' }).keys | Should -Be 'ctrl+u'
+    }
 }

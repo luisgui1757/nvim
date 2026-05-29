@@ -316,6 +316,78 @@ if ($MergeWindowsTerminal) {
 
                 return $result
             }
+            function Get-WTActionKeySet {
+                param($item)
+                $keys = @()
+                if ($null -eq $item -or $null -eq $item.keys) {
+                    return @()
+                }
+                foreach ($key in (Get-ArrayValue $item.keys)) {
+                    if ($null -eq $key) {
+                        continue
+                    }
+                    $keyText = ([string]$key).Trim()
+                    if ($keyText) {
+                        $keys += $keyText.ToLowerInvariant()
+                    }
+                }
+                return @($keys | Sort-Object -Unique)
+            }
+            function Test-WTActionKeyOverlap {
+                param($leftKeys, $rightKeys)
+                foreach ($leftKey in (Get-ArrayValue $leftKeys)) {
+                    foreach ($rightKey in (Get-ArrayValue $rightKeys)) {
+                        if ($leftKey -eq $rightKey) {
+                            return $true
+                        }
+                    }
+                }
+                return $false
+            }
+            function Merge-WTActions {
+                param($currentItems, $fragmentItems)
+                $result = @()
+                $fragmentEntries = @()
+                $emitted = @{}
+                $index = 0
+
+                foreach ($item in (Get-ArrayValue $fragmentItems)) {
+                    $fragmentEntries += [pscustomobject]@{
+                        Index = [string]$index
+                        Item = $item
+                        Keys = @(Get-WTActionKeySet $item)
+                    }
+                    $index += 1
+                }
+
+                foreach ($item in (Get-ArrayValue $currentItems)) {
+                    $currentKeys = @(Get-WTActionKeySet $item)
+                    $matches = @()
+                    foreach ($fragmentEntry in $fragmentEntries) {
+                        if ($currentKeys.Count -gt 0 -and $fragmentEntry.Keys.Count -gt 0 -and (Test-WTActionKeyOverlap $currentKeys $fragmentEntry.Keys)) {
+                            $matches += $fragmentEntry
+                        }
+                    }
+                    if ($matches.Count -gt 0) {
+                        foreach ($match in $matches) {
+                            if (-not $emitted.ContainsKey($match.Index)) {
+                                $result += $match.Item
+                                $emitted[$match.Index] = $true
+                            }
+                        }
+                    } else {
+                        $result += $item
+                    }
+                }
+
+                foreach ($fragmentEntry in $fragmentEntries) {
+                    if (-not $emitted.ContainsKey($fragmentEntry.Index)) {
+                        $result += $fragmentEntry.Item
+                    }
+                }
+
+                return $result
+            }
             if ($null -ne $fragment.copyFormatting)        { Set-OrAdd-Property $current "copyFormatting"        $fragment.copyFormatting }
             if ($null -ne $fragment.copyOnSelect)          { Set-OrAdd-Property $current "copyOnSelect"          $fragment.copyOnSelect }
             if ($null -ne $fragment.firstWindowPreference) { Set-OrAdd-Property $current "firstWindowPreference" $fragment.firstWindowPreference }
@@ -329,7 +401,7 @@ if ($MergeWindowsTerminal) {
             } else {
                 $current.profiles.defaults = $fragment.profiles.defaults
             }
-            Set-OrAdd-Property $current "actions" @(Merge-ObjectArrayByProperty $current.actions $fragment.actions "keys")
+            Set-OrAdd-Property $current "actions" @(Merge-WTActions $current.actions $fragment.actions)
             Set-OrAdd-Property $current "schemes" @(Merge-ObjectArrayByProperty $current.schemes $fragment.schemes "name")
             Set-OrAdd-Property $current "themes"  @(Merge-ObjectArrayByProperty $current.themes  $fragment.themes  "name")
             $tmp = "$wtSettings.tmp"
