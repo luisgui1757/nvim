@@ -424,7 +424,7 @@ skipped.
 - **tmux colors track the canonical rose-pine/tmux theme.** Source:
   <https://github.com/rose-pine/tmux>, main variant. Role-based styles
   carry the colors. Map: status-style `fg=pine,bg=base`; window-status
-  `fg=iris,bg=base`; window-status-current `fg=gold,bg=base` (no bold);
+  `fg=iris,bg=base`; window-status-current `fg=gold,bg=base,bold`;
   window-status-activity `fg=base,bg=rose`; pane-border `fg=hl_high #524f67`
   / pane-active-border `fg=gold`; message `fg=muted,bg=base`;
   message-command `fg=base,bg=gold`. **DO** set explicit
@@ -433,7 +433,10 @@ skipped.
   conditional that psmux v3.3.4 renders as a literal string in each cell.
   An earlier ship that used `setw -gu window-status-format` (unset, fall
   back to tmux default) lit that bug -- explicit `#I:#W#F` parses cleanly
-  in both real tmux and psmux. Status-left (iris-bold session + muted
+  in both real tmux and psmux. Active windows use gold with bold weight because
+  the foreground-only canonical theme was too subtle in dark terminals; bold is
+  the smallest divergence that fixes legibility without breaking the palette.
+  Status-left (iris-bold session + muted
   separator) and status-right (foam date + gold time) are our own
   customizations, palette-consistent. History/rejected attempts worth not
   re-attempting:
