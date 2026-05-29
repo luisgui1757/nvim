@@ -77,6 +77,38 @@ for stale in mason-lspconfig.nvim none-ls.nvim CopilotChat.nvim copilot.vim nui.
     fi
 done
 
+if ! grep -q 'lazy-lock\.json' nvim/init.lua \
+    || ! grep -q 'locked_plugin_commit("lazy.nvim")' nvim/init.lua \
+    || ! grep -q '"checkout", "--detach", lazy_commit' nvim/init.lua; then
+    echo "FAIL: lazy.nvim bootstrap must pin itself to nvim/lazy-lock.json"
+    fail=1
+else
+    echo "ok  : lazy.nvim bootstrap is lockfile-pinned"
+fi
+
+if ! grep -q 'lazy-lock\.json' tests/nvim/minimal_init.lua \
+    || ! grep -q 'locked_plugin_commit("plenary.nvim")' tests/nvim/minimal_init.lua \
+    || ! grep -q '"checkout", "--detach", plenary_commit' tests/nvim/minimal_init.lua; then
+    echo "FAIL: plenary test harness must pin itself to nvim/lazy-lock.json"
+    fail=1
+else
+    echo "ok  : plenary test harness is lockfile-pinned"
+fi
+
+if ! grep -Fq '.\test.ps1' .github/workflows/test.yml; then
+    echo "FAIL: Windows CI must use the repo-local test.ps1 entry point"
+    fail=1
+else
+    echo "ok  : Windows CI uses test.ps1"
+fi
+
+if grep -q 'sequential[[:space:]]*=[[:space:]]*true' tests/nvim/run.ps1 .github/workflows/test.yml 2>/dev/null; then
+    echo "FAIL: Windows nvim test path must not use Plenary sequential mode"
+    fail=1
+else
+    echo "ok  : Windows nvim test path avoids Plenary sequential mode"
+fi
+
 markdown_renderers=$(grep -nE "headlines\\.nvim|markview\\.nvim" nvim/lua/plugins/*.lua 2>/dev/null || true)
 if [[ -n "$markdown_renderers" ]]; then
     echo "FAIL: markdown rendering must stay owned by render-markdown.nvim:"

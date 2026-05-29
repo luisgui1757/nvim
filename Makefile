@@ -10,10 +10,6 @@ help:
 	@echo "Targets:"
 	@echo "  setup           — ONE-SHOT: deps + symlinks + plugins + LSP (recommended)"
 	@echo "  setup-dryrun    — preview every step of setup without acting"
-	@echo "  deps            — interactively install missing dependencies (nvim, starship, ...)"
-	@echo "  deps-dryrun     — print what deps would install without acting"
-	@echo "  install         — symlink configs into OS-appropriate paths"
-	@echo "  dryrun          — print what install would do without changing anything"
 	@echo "  test            — run all test sub-targets (skips what's not installed)"
 	@echo "  test-nvim       — plenary busted suite under nvim --headless"
 	@echo "  test-shell      — shellcheck + zsh smoke + Esc-binding regression"
@@ -23,6 +19,12 @@ help:
 	@echo "  test-bootstrap  — bats coverage of bootstrap.sh idempotency"
 	@echo "  test-static     — json/toml/yaml lint, editorconfig, invariants"
 	@echo "  lint            — shellcheck everything"
+	@echo
+	@echo "Maintainer phase targets:"
+	@echo "  deps            — phase 1 only: dependency install"
+	@echo "  deps-dryrun     — preview phase 1"
+	@echo "  install         — phase 2 only: symlink configs"
+	@echo "  dryrun          — preview phase 2"
 
 setup:
 	@bash setup.sh

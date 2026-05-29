@@ -12,12 +12,11 @@
 
 ## Install
 
-> **TL;DR — the one command is `setup`.** Run `setup.sh` (macOS / Linux / WSL)
-> or `setup.ps1` (Windows). That's it. It installs dependencies, symlinks every
-> config, and syncs Neovim plugins + LSP. You do **not** run `bootstrap.sh` or
-> `install-deps.sh` yourself — `setup` runs them for you, in order.
+> **TL;DR — the one public install command is `setup`.** Run `setup.sh`
+> (macOS / Linux / WSL) or `setup.ps1` (Windows). That's it. It installs
+> dependencies, symlinks every config, and syncs Neovim plugins + LSP.
 
-`setup` is the supreme call: a thin orchestrator over four idempotent phases.
+`setup` is a thin orchestrator over four idempotent phases:
 
 ```
 setup ─► install-deps   (phase 1: install packages)
@@ -26,15 +25,9 @@ setup ─► install-deps   (phase 1: install packages)
       ─► nvim +MasonToolsInstallSync     (phase 4: LSP servers + formatters)
 ```
 
-You only reach for the phase scripts to **re-run a single phase later** (e.g.
-`bootstrap.sh` to re-symlink after moving the repo). On a fresh machine, ignore
-them and run `setup`.
-
-| Situation | Command |
-|---|---|
-| **New machine — the normal case** | **`setup.sh`** · **`setup.ps1`** |
-| Re-symlink configs only (no installs) | `bootstrap.sh` · `bootstrap.ps1` |
-| (Re)install packages only | `install-deps.sh` · `install-deps.ps1` |
+The phase scripts exist so `setup` can stay simple and maintainers can debug a
+single phase. They are not separate public install paths. For a fresh machine,
+or for a coworker trying this repo cold, run `setup`.
 
 ### One-shot, from scratch (recommended)
 
@@ -58,9 +51,10 @@ iwr https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.ps1 -OutFi
 .\setup.ps1 -All
 ```
 
-If Developer Mode is unavailable AND you cannot enable it, run JUST
-`bootstrap.ps1` from an elevated PowerShell; do NOT elevate `setup.ps1` --
-scoop refuses admin.
+If Developer Mode is unavailable AND you cannot enable it, run just
+`.\bootstrap.ps1` from an elevated PowerShell, then return to a normal shell for
+`.\setup.ps1 -SkipDeps -SkipBootstrap`. Do NOT elevate the whole `setup.ps1`
+run -- scoop refuses admin.
 
 Pass `--all` / `-All` for explicit non-interactive installs (Y to every prompt).
 When setup detects redirected stdin/stdout and neither all nor dry-run was
@@ -76,8 +70,6 @@ Add `--dry-run` / `-DryRun` to preview every step without touching disk.
 ./setup.sh                       # Y/n per dep, end-to-end
 ./setup.sh --all                 # non-interactive
 ./setup.sh --dry-run             # preview
-./setup.sh --skip-deps           # already installed; just bootstrap + sync
-./setup.sh --skip-bootstrap      # already symlinked; just sync plugins + LSP
 make setup                       # same as ./setup.sh, via the Makefile
 ```
 
@@ -86,25 +78,6 @@ make setup                       # same as ./setup.sh, via the Makefile
 .\setup.ps1 -All
 .\setup.ps1 -DryRun
 .\setup.ps1 -MergeWindowsTerminal     # also apply the WT rose-pine fragment
-```
-
-### Or invoke the phases manually
-
-`setup.{sh,ps1}` is a thin orchestrator. Each phase is also a
-standalone, idempotent script:
-
-```bash
-./install-deps.sh                # phase 1: package-manager installs
-./bootstrap.sh                   # phase 2: symlink configs
-nvim --headless "+Lazy! sync" +qa            # phase 3: plugins
-nvim --headless "+MasonToolsInstallSync" +qa # phase 4: LSP + formatters
-```
-
-```powershell
-.\install-deps.ps1
-.\bootstrap.ps1
-nvim --headless "+Lazy! sync" "+qa"
-nvim --headless "+MasonToolsInstallSync" "+qa"
 ```
 
 Phase 1 (`install-deps.sh`) also offers to make **zsh your login shell**
@@ -138,15 +111,25 @@ already in place. Pre-existing non-symlink targets are backed up to
 
 ## Test
 
+Use the same top-level test command that CI uses for your OS:
+
 ```bash
+# mac / linux / wsl
 make help           # list targets
 make test           # run everything that can run on this OS
 make test-bootstrap # bats coverage of the installer
 make lint           # shellcheck everything
 ```
 
+```powershell
+# windows
+.\test.ps1          # PSScriptAnalyzer + Pester + Nvim plenary busted
+```
+
 Sub-targets skip themselves with a `skipped: <tool> not installed` message
-when their dependency tool is missing on the current machine.
+when their dependency tool is missing on the current machine. In CI, missing
+Windows test dependencies are fatal so the workflow cannot go green by silently
+skipping the actual checks.
 
 ## Repo layout
 
@@ -160,9 +143,12 @@ when their dependency tool is missing on the current machine.
 ├── windows-terminal/      # settings.fragment.jsonc + merge README
 ├── tests/                 # automated test tree
 ├── .github/workflows/     # CI matrix (ubuntu, macos, windows)
-├── bootstrap.sh           # Unix installer
-├── bootstrap.ps1          # Windows installer
-├── Makefile               # test/install entry point
+├── setup.sh               # public macOS/Linux/WSL entry point
+├── setup.ps1              # public Windows entry point
+├── bootstrap.sh           # setup phase: Unix symlinks
+├── bootstrap.ps1          # setup phase: Windows symlinks
+├── test.ps1               # Windows test entry point
+├── Makefile               # Unix test/setup conveniences
 ├── .editorconfig          # cross-IDE formatting rules
 └── README.md
 ```
@@ -200,8 +186,8 @@ when their dependency tool is missing on the current machine.
   it. Only the user-owned keys live in `settings.fragment.jsonc`; the install
   script merges them in.
 
-See `CLAUDE.md` for the operational guide (invariants, common workflows,
-conventions).
+See `CLAUDE.md` for the coding-agent operational guide (invariants, common
+workflows, conventions).
 
 ## Daily workflows
 
@@ -258,8 +244,8 @@ make test                       # verify the new state
 | Starship shows only the last few folders (or a leading `…/`) | the `[directory]` module was truncating the path | `starship/starship.toml` sets `truncation_length = 0` + `truncate_to_repo = false` for the full path; raise the length or set `truncate_to_repo = true` to shorten again |
 | A folder like `Downloads`/`Music`/`Pictures` shows as a blank `~/` | its `[directory.substitutions]` glyph was stripped to a bare space | values are `icon + name` (e.g. `Downloads = "<nerd-font-glyph> Downloads"`) using a codepoint your font has; `tests/starship/directory_test.sh` fails on a whitespace-only value |
 | `Alt-h/j/k/l` window nav doesn't work in terminal | something rebinds bare Esc in the shell | `bindkey | grep '^"\^\['` in zsh — should NOT show `kill-whole-line` |
-| tmux (or any new terminal) launches **bash on Linux**, not zsh | the login shell was never changed — `~/.zshrc` is symlinked but the account still logs into bash | re-run `./install-deps.sh` and accept "Make zsh your default login shell?", or `chsh -s "$(command -v zsh)"` then log out/in. macOS already defaults to zsh |
-| `chsh` fails with `user '<name>' does not exist in /etc/passwd` | you log in via a **domain** account (AD/LDAP/SSSD) that isn't in local `/etc/passwd`, so `chsh` can't touch it | re-run `./install-deps.sh` — it detects this and offers to re-exec interactive bash into zsh via `~/.bashrc` instead. The "proper" fix is admin-side: set the directory `loginShell` / SSSD `default_shell` |
+| tmux (or any new terminal) launches **bash on Linux**, not zsh | the login shell was never changed — `~/.zshrc` is symlinked but the account still logs into bash | re-run `./setup.sh` and accept "Make zsh your default login shell?", or `chsh -s "$(command -v zsh)"` then log out/in. macOS already defaults to zsh |
+| `chsh` fails with `user '<name>' does not exist in /etc/passwd` | you log in via a **domain** account (AD/LDAP/SSSD) that isn't in local `/etc/passwd`, so `chsh` can't touch it | re-run `./setup.sh` — it detects this and offers to re-exec interactive bash into zsh via `~/.bashrc` instead. The "proper" fix is admin-side: set the directory `loginShell` / SSSD `default_shell` |
 | Move commits in lazygit, including inside psmux | Ctrl+J collides with Enter on the wire, and psmux v3.3.4 does not relay Windows Terminal's Win32-input-mode modifier data into panes | use uppercase `J` / `K`. `%LOCALAPPDATA%\lazygit\config.yml` binds commits-panel moveDownCommit / moveUpCommit to printable J/K, so no psmux root bind is needed. In the commits panel, use PgUp/PgDn or Ctrl-U/Ctrl-D to scroll the diff |
 | Ghostty doesn't open maximized | `window-save-state = always` restored an old geometry over `maximize` (macOS only) | `ghostty/config` uses `window-save-state = default` (not `always`) with `maximize = true`; `always` lets the saved size win |
 | Ghostty doesn't load the config | wrong path | the install path is `~/Library/Application Support/com.mitchellh.ghostty/config` on macOS, `~/.config/ghostty/config` on Linux. `bootstrap.sh` handles this |
