@@ -25,7 +25,7 @@ run_bootstrap() {
     [ "$(readlink "$FAKE_HOME/.config/starship.toml")" = "$REPO_ROOT/starship/starship.toml" ]
     [ -L "$FAKE_HOME/.tmux.conf" ]
     [ -L "$FAKE_HOME/.zshrc" ]
-    # lazygit config -- carries the Ctrl+J/Alt+J binding fallback for psmux.
+    # lazygit config -- carries the F8/F7 move-commit binding.
     [ -L "$FAKE_HOME/.config/lazygit/config.yml" ]
     [ "$(readlink "$FAKE_HOME/.config/lazygit/config.yml")" = "$REPO_ROOT/lazygit/config.yml" ]
 }

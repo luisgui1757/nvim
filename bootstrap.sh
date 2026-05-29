@@ -189,9 +189,9 @@ link "${REPO_ROOT}/nvim"                "${NVIM_DEST}"
 link "${REPO_ROOT}/starship/starship.toml" "${HOME}/.config/starship.toml"
 link "${REPO_ROOT}/tmux/tmux.conf"      "${HOME}/.tmux.conf"
 link "${REPO_ROOT}/shells/zshrc"        "${HOME}/.zshrc"
-# lazygit config -- XDG path on macOS/Linux. Carries the Ctrl+J/Alt+J
-# "move commit down" binding workaround for psmux on Windows (harmless
-# on Unix tmux where the default Ctrl+J already works).
+# lazygit config -- XDG path on macOS/Linux. Uses F8/F7 for lazygit
+# move-commit bindings; the Ctrl+J/K psmux rescue lives only in the
+# Windows-only tmux.windows.conf overlay.
 link "${REPO_ROOT}/lazygit/config.yml" "${HOME}/.config/lazygit/config.yml"
 
 # ---- OS-specific links -------------------------------------------------------

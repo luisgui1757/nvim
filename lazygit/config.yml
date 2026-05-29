@@ -5,23 +5,22 @@
 # Windows path was %APPDATA% in earlier commits; lazygit v0.58 actually
 # reads from %LOCALAPPDATA% (verified via `lazygit --print-config-dir`).
 #
-# Intentionally minimal. Earlier revisions overrode moveDownCommit /
-# moveUpCommit to work around psmux dropping Ctrl+J. That was a dead end:
-# lazygit v0.58 only registers `<a-enter>` as an Alt key in
-# pkg/config/keynames.go LabelByKey, and Alt+letter combinations like
-# `<a-j>` / `<alt+j>` are rejected as "Unrecognized key". The only valid
-# alternatives are F-keys (`<f7>`/`<f8>`) and Shift+Arrows (`<s-up>` /
-# `<s-down>`), both of which can also be eaten by psmux. So we use the
-# defaults and document the psmux workflow instead.
+# psmux v3.3.4 does not relay Windows Terminal's Win32-input-mode
+# disambiguation to panes, so Ctrl+J arrives at lazygit as Enter. The
+# Windows-only psmux overlay (`tmux/tmux.windows.conf`) catches C-j / C-k at
+# psmux's root parser and sends F8 / F7 to the pane instead. Those F-keys are
+# registered lazygit key names, so bind moveDownCommit / moveUpCommit to them
+# here.
 #
-# Defaults that work:
-#   - Unix tmux: Ctrl+J / Ctrl+K move commits up/down (default).
-#   - Windows Terminal directly (no psmux): Ctrl+J / Ctrl+K work.
+# Trade-off: lazygit v0.58 stores these as single string fields, so this
+# override replaces the default Ctrl+J / Ctrl+K bindings instead of adding
+# alternatives. F8 / F7 are the canonical move-commit keys everywhere this
+# config is loaded. Inside Windows psmux, Ctrl+J / Ctrl+K still work by being
+# translated to F8 / F7 before lazygit sees them.
 #
-# psmux workaround (Windows + psmux v3.3.4): Ctrl+J degrades to Enter via
-# the ConPTY relay (psmux upstream issue #150). Move commits via lazygit's
-# interactive rebase: press `i` on a commit, then `s` to squash / `r` to
-# reword / drag with the rebase TODO list. Or open lazygit outside psmux.
-#
-# Add user customizations below this line.
-{}
+# Unix tmux is not given the psmux root binds because bootstrap.sh does not
+# symlink tmux.windows.conf; only bootstrap.ps1 does.
+keybinding:
+  commits:
+    moveDownCommit: '<f8>'
+    moveUpCommit: '<f7>'

@@ -31,7 +31,7 @@ machine; this repo does not ship a `claude/` folder.
 ├── tmux/                  tmux.conf (Rose Pine, vi-mode, OSC52 clipboard)
 ├── ghostty/               config (Rose Pine, Hack Nerd, tuned for tmux)
 ├── windows-terminal/      settings.fragment.jsonc + merge README
-├── lazygit/               config.yml (Ctrl+J/K binding + Alt+J/K fallbacks for psmux)
+├── lazygit/               config.yml (F8/F7 move-commit binding for psmux rescue)
 ├── tests/                 automated tests, grouped by tool
 ├── .github/workflows/     CI matrix: ubuntu / macos / windows
 ├── bootstrap.sh           macOS/Linux/WSL installer (idempotent)
@@ -455,7 +455,7 @@ skipped.
   `space`. Both pieces are required: editorconfig controls nvim's buffer
   behavior while editing; stylua.toml controls what gets written back.
   Guarded by `invariants_test.sh` ("no tab-indented .lua").
-- **lazygit Ctrl+J / Ctrl+K need an Alt+J/K + F8/F7 fallback under psmux,
+- **lazygit Ctrl+J / Ctrl+K are rescued under psmux via F8/F7 root binds,
   AND the config must symlink into `%LOCALAPPDATA%\lazygit\`.** Two
   separate gotchas wrapped together:
   1. **Config path:** lazygit v0.58 reads its config from
@@ -470,18 +470,26 @@ skipped.
      modifyOtherKeys, or kitty keyboard protocol. Windows Terminal sends
      it; lazygit's tcell/v3 decodes it; but psmux v3.3.4 does NOT relay
      the escape, so default Ctrl+J degrades to Enter inside a psmux pane.
-     `lazygit/config.yml` maps `moveDownCommit` / `moveUpCommit` to the
-     **array** `[<ctrl+j>, <alt+j>, <alt+down>, <f8>]` (and K-side
-     equivalent). Modifier-prefixed first because they are canonical on
-     every other platform; F-keys last as a bare-key fallback. F-keys are
-     NOT raw scancodes (earlier note was wrong) -- they are encoded
-     escape sequences and CAN be eaten by a multiplexer. If F8 still
-     fails in psmux after the LocalAppData fix lands, check
-     `psmux list-keys -T root | rg 'F7|F8'` and add `unbind-key -n F7/F8`
-     to `tmux.windows.conf`. Real tmux on Unix gets `extended-keys on` +
-     `extended-keys-format csi-u` + `terminal-features *:extkeys` in the
-     main `tmux.conf` so Ctrl+J is distinguished there; psmux ignores
-     those options as unknowns.
+     No documented psmux config option relays that metadata to panes, so
+     we shift the disambiguation up one layer: `tmux/tmux.windows.conf`
+     root-binds `C-j` / `C-k` to `send-keys F8` / `send-keys F7`, and
+     `lazygit/config.yml` binds `moveDownCommit` / `moveUpCommit` to
+     `<f8>` / `<f7>`. lazygit v0.58 stores these keybindings as single
+     string fields, so the override REPLACES the default Ctrl+J / Ctrl+K
+     bindings rather than adding alternatives. F8 / F7 are therefore the
+     canonical move-commit keys anywhere this config is loaded. Inside
+     Windows psmux panes, muscle-memory Ctrl+J / Ctrl+K still works because
+     psmux translates it before lazygit sees it. Outside psmux, use F8 /
+     F7 for this action.
+     Scope stays Windows-only: `bootstrap.ps1` symlinks
+     `tmux/tmux.windows.conf` to `~/.tmux.windows.conf`; `bootstrap.sh`
+     does NOT. The main `tmux/tmux.conf` only `source-file -q`s that path,
+     so normal Unix tmux is unaffected unless a user manually creates a
+     stray `~/.tmux.windows.conf` symlink. Real tmux on Unix still has
+     `extended-keys on` + `extended-keys-format csi-u` +
+     `terminal-features *:extkeys` in the main config, but lazygit's
+     explicit F-key override means those settings no longer preserve the
+     default Ctrl+J / Ctrl+K lazygit action.
 
 ## When you're about to make a change
 
