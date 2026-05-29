@@ -17,6 +17,15 @@ for key in moveDownCommit moveUpCommit; do
         echo "      $line"
         fail=1
     fi
+    # lazygit v0.58 uses the short modifier form with DASH separator
+    # (<a-LETTER>, <c-LETTER>). The long form with plus (<alt+LETTER>,
+    # <ctrl+LETTER>) is master-only and v0.58 rejects it as
+    # "Unrecognized key". Refuse the long form.
+    if grep -Eq "<(alt|ctrl|shift|meta)\+" <<<"$line"; then
+        echo "FAIL: $key uses <modifier+key> long form; lazygit v0.58 needs <a-key>/<c-key> short form"
+        echo "      $line"
+        fail=1
+    fi
 done
 
 [[ "$fail" -eq 0 ]] && echo "OK" || exit 1

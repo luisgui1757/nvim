@@ -16,11 +16,17 @@
 # Fix: override the binding to Alt+J / Alt+K. Alt+letter is the old
 # Meta/ESC-prefix path (sent as ESC <letter> on the wire) and is unambiguous
 # everywhere -- through ConPTY + psmux on Windows, and through real tmux on
-# Unix. lazygit's MoveDownCommit / MoveUpCommit are typed as `string` (not
-# `[]string`), so multi-key arrays do not parse -- we pick the most portable
-# single key. The trade-off: Unix muscle-memory Ctrl+J is replaced by Alt+J
-# for these two actions; every other Ctrl-prefixed lazygit binding still works.
+# Unix. lazygit v0.58 types MoveDownCommit / MoveUpCommit as `string`, so
+# multi-key arrays do not parse -- we pick the most portable single key.
+# Trade-off: Unix muscle-memory Ctrl+J is replaced by Alt+J for these two
+# actions; every other Ctrl-prefixed lazygit binding still works.
+#
+# SYNTAX NOTE: lazygit v0.58 uses the short modifier form with a DASH
+# (`<a-LETTER>`, `<c-LETTER>`, `<m-LETTER>`). The `<alt+LETTER>` long form
+# with a plus is master-only and is rejected by v0.58 as "Unrecognized key".
+# Source: lazygit v0.58.1 docs/keybindings/Custom_Keybindings.md (uses
+# `<a-enter>` syntax) + pkg/config/user_config.go (defaults are `<c-j>`).
 keybinding:
   commits:
-    moveDownCommit: <alt+j>
-    moveUpCommit: <alt+k>
+    moveDownCommit: <a-j>
+    moveUpCommit: <a-k>
