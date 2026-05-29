@@ -90,13 +90,9 @@ fi
 # without a BOM as ANSI / CP-1252; UTF-8 multi-byte chars (em-dash,
 # arrows) get mis-tokenized and cause "Missing closing ')'" parse
 # errors. Save-as-UTF-8-BOM would also work, but ASCII is simpler.
-ps1_files=(
-    bootstrap.ps1
-    install-deps.ps1
-    setup.ps1
-    shells/powershell_profile.ps1
-    tests/bootstrap/*.ps1
-    tests/powershell/*.ps1
+ps1_files=()
+while IFS= read -r f; do ps1_files+=("$f"); done < <(
+    find . -type f -name '*.ps1' -not -path './.git/*' -not -path './tests/.cache/*'
 )
 ps1_non_ascii=$(LC_ALL=C grep -lP "[^\x00-\x7F]" "${ps1_files[@]}" 2>/dev/null || true)
 if [[ -n "$ps1_non_ascii" ]]; then
