@@ -1,29 +1,22 @@
 #!/usr/bin/env bash
 # Regression guard: lazygit/config.yml must use single-string bindings, not
-# arrays. lazygit v0.58.x types moveDownCommit/moveUpCommit as `string`; an
-# array (!!seq) here aborts lazygit with "cannot unmarshal !!seq into string"
-# at every startup.
+# arrays. lazygit v0.58.x types moveDownCommit/moveUpCommit as Go `string`;
+# an array (!!seq) here aborts lazygit with "cannot unmarshal !!seq into
+# string" at every startup.
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 CFG="$REPO_ROOT/lazygit/config.yml"
 
-if ! command -v python3 >/dev/null 2>&1; then
-    echo "skipped: python3 not installed"
-    exit 0
-fi
+fail=0
+for key in moveDownCommit moveUpCommit; do
+    line=$(grep -E "^\s*${key}:" "$CFG" || true)
+    if [[ -z "$line" ]]; then continue; fi
+    # An array-form value contains a `[` somewhere in the value position.
+    if [[ "$line" == *"["* ]]; then
+        echo "FAIL: $key uses array form; lazygit rejects with 'cannot unmarshal !!seq into string'"
+        echo "      $line"
+        fail=1
+    fi
+done
 
-python3 - "$CFG" <<'PY'
-import sys, yaml
-with open(sys.argv[1]) as fh:
-    cfg = yaml.safe_load(fh)
-commits = (cfg or {}).get("keybinding", {}).get("commits", {})
-bad = []
-for key in ("moveDownCommit", "moveUpCommit"):
-    val = commits.get(key)
-    if val is not None and not isinstance(val, str):
-        bad.append(f"{key}: {type(val).__name__} (expected str)")
-if bad:
-    sys.exit("FAIL: lazygit config bindings must be strings:\n  " + "\n  ".join(bad))
-PY
-
-echo "OK"
+[[ "$fail" -eq 0 ]] && echo "OK" || exit 1
