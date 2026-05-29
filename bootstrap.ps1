@@ -211,17 +211,6 @@ if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
 New-SymLink -Source (Join-Path $RepoRoot 'tmux\tmux.windows.conf')     -Destination (Join-Path $env:USERPROFILE '.tmux.windows.conf')
 New-SymLink -Source (Join-Path $RepoRoot 'shells\powershell_profile.ps1') -Destination $PROFILE
 
-# Claude Code settings (repo root claude/, not under nvim/). New-SymLink
-# creates %USERPROFILE%\.claude\ if absent and backs up any prior file/link.
-# The statusline command uses bash so settings.json stays portable.
-if (-not (Get-Command bash -ErrorAction SilentlyContinue)) {
-    Write-Host "  WARN     Claude statusline requires bash on PATH; install Git Bash or WSL for Claude Code statusline" -ForegroundColor Yellow
-}
-$claudeDir = Join-Path $env:USERPROFILE '.claude'
-New-SymLink -Source (Join-Path $RepoRoot 'claude\settings.json')         -Destination (Join-Path $claudeDir 'settings.json')
-New-SymLink -Source (Join-Path $RepoRoot 'claude\statusline-command.sh') -Destination (Join-Path $claudeDir 'statusline-command.sh')
-New-SymLink -Source (Join-Path $RepoRoot 'claude\statusline-command.ps1') -Destination (Join-Path $claudeDir 'statusline-command.ps1')
-
 # lazygit config -- %LOCALAPPDATA%\lazygit\config.yml on Windows. lazygit
 # v0.58 reads its config from %LOCALAPPDATA%\lazygit, NOT %APPDATA%\lazygit
 # (verified via `lazygit --print-config-dir`). Carries the Alt+J/K + F7/F8

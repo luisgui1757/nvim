@@ -20,7 +20,7 @@ check_absent() {
 
 check_absent "NODE_TLS_REJECT_UNAUTHORIZED gone (security)" \
     "NODE_TLS_REJECT_UNAUTHORIZED" \
-    --exclude-dir=.git --exclude-dir=claude --exclude-dir=.claude \
+    --exclude-dir=.git --exclude-dir=.claude \
     --exclude-dir=tests \
     --exclude="CLAUDE.md" --exclude="README.md" \
     .
@@ -118,13 +118,6 @@ if [[ -n "$ps1_comment_apos" ]]; then
     fail=1
 else
     echo "ok  : no apostrophes in .ps1 comments"
-fi
-
-if grep -Eq '"(skipDangerousModePermissionPrompt|skipAutoPermissionPrompt)"[[:space:]]*:[[:space:]]*true' claude/settings.json; then
-    echo "FAIL: claude/settings.json must not skip permission prompts"
-    fail=1
-else
-    echo "ok  : Claude permission prompts are not skipped"
 fi
 
 # Lua indentation: spaces only. stylua.toml at repo root declares Spaces+2;

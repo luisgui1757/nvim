@@ -7,7 +7,7 @@ mkdir -p "$CACHE_DIR"
 err=$(mktemp "$CACHE_DIR/json-lint.XXXXXX")
 trap 'rm -f "$err"' EXIT
 
-# Standard JSON files: lazy-lock.json, claude/settings.json, etc.
+# Standard JSON files: lazy-lock.json, .editorconfig-checker.json, etc.
 json_files=$(find "$REPO_ROOT" -type f -name "*.json" -not -path "*/.git/*" -not -path "*/tests/.cache/*" -not -name "*.tmp")
 if command -v jq >/dev/null 2>&1; then
     fail=0

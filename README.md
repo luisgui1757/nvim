@@ -9,7 +9,6 @@
 | **tmux**         | `~/.tmux.conf` → `tmux/tmux.conf`                 | same                            | `%USERPROFILE%\.tmux.conf` → `tmux\tmux.conf` (read by **psmux** — native Windows tmux); also via WSL |
 | **Ghostty**      | `~/Library/Application Support/com.mitchellh.ghostty/config` → `ghostty/config` | `~/.config/ghostty/config` → `ghostty/config` | n/a (Ghostty not on Windows yet) |
 | **Windows Terminal** | n/a                                           | n/a                             | merge `windows-terminal/settings.fragment.jsonc` (see that dir's README)  |
-| **Claude Code**  | `~/.claude/settings.json` → `claude/settings.json`, statusline scripts → `claude/statusline-command.*` | same | `%USERPROFILE%\.claude\settings.json` → `claude\settings.json`, statusline scripts → `claude\statusline-command.*`; statusline requires Git Bash or WSL `bash` on `PATH` |
 
 ## Install
 
@@ -161,7 +160,6 @@ when their dependency tool is missing on the current machine.
 ├── tmux/                  # tmux.conf (Rose Pine, vi-mode, true-color)
 ├── ghostty/               # config (Rose Pine, Hack Nerd, Ghostty-tuned)
 ├── windows-terminal/      # settings.fragment.jsonc + merge README
-├── claude/                # Claude Code settings (cross-machine sync)
 ├── tests/                 # automated test tree
 ├── .github/workflows/     # CI matrix (ubuntu, macos, windows)
 ├── bootstrap.sh           # Unix installer

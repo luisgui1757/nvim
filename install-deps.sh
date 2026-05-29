@@ -917,7 +917,7 @@ fi
 
 section "developer / test dependencies (optional)"
 install shellcheck "shell script linter"
-install jq "JSON CLI, used by claude/statusline-command.sh"
+install jq "JSON CLI, general-purpose tool used by many scripts"
 install bats "bats-core, for tests/bootstrap/sh_test.bats"
 install hyperfine "starship prompt perf test"
 install taplo "TOML linter"

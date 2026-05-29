@@ -17,24 +17,9 @@ in-place clone elsewhere works too. Do NOT put the repo at `~/.config/nvim/` —
 the installer creates that path as a symlink **pointing into** the repo, so a
 repo there would self-overlap (the self-link guard refuses this).
 
-Claude Code settings live under `claude/` at the **repo root** — NOT under
-`nvim/claude/`. `~/.claude/settings.json`, `~/.claude/statusline-command.sh`,
-and `~/.claude/statusline-command.ps1` symlink to the matching files under
-`claude/`. (A stale
-pre-restructure layout routed `~/.claude/settings.json` through
-`~/.config/nvim/claude/` — that indirection is deprecated; bootstrap now links
-`claude/` directly.)
-
-Claude Code statusline uses a single portable Bash invocation in
-`claude/settings.json`: `bash "$HOME/.claude/statusline-command.sh"`. On native
-Windows, Claude Code therefore needs Git Bash or WSL to put `bash` on `PATH`;
-`bootstrap.ps1` warns when that requirement is missing. Do not rewrite
-`settings.json` per OS, because it is symlinked as one shared source of truth.
-
-Claude Code permissions are intentionally portable. `claude/settings.json`
-keeps generic command patterns and a short WebFetch domain list only; do not
-sync project-specific allowlist entries or set `skipDangerousModePermissionPrompt`
-/ `skipAutoPermissionPrompt` to `true`.
+Claude Code settings are intentionally **NOT** synced through this repo. Keep
+your Claude Code preferences in `~/.claude/` (Claude's local state dir) per
+machine; this repo does not ship a `claude/` folder.
 
 ## Layout at a glance
 
@@ -46,7 +31,6 @@ sync project-specific allowlist entries or set `skipDangerousModePermissionPromp
 ├── tmux/                  tmux.conf (Rose Pine, vi-mode, OSC52 clipboard)
 ├── ghostty/               config (Rose Pine, Hack Nerd, tuned for tmux)
 ├── windows-terminal/      settings.fragment.jsonc + merge README
-├── claude/                Claude Code per-user settings (cross-machine sync)
 ├── lazygit/               config.yml (Ctrl+J/K binding + Alt+J/K fallbacks for psmux)
 ├── tests/                 automated tests, grouped by tool
 ├── .github/workflows/     CI matrix: ubuntu / macos / windows
@@ -60,8 +44,8 @@ sync project-specific allowlist entries or set `skipDangerousModePermissionPromp
 ```
 
 `.claude/` (with dot) is Claude Code's local state directory and is **not**
-part of the synced configuration — leave it alone. `claude/` (no dot) is the
-folder of Claude Code settings that DO sync.
+part of the synced configuration — leave it alone. This repo no longer ships a
+`claude/` folder; Claude Code preferences live per-machine under `~/.claude/`.
 
 ## Non-negotiable invariants
 
@@ -73,9 +57,9 @@ that violates one of these, fix it instead of disabling the test.
    that mention `<leader>` are resolved at spec-import time, so flipping the
    order silently re-binds every `<leader>X` to `\X`. Caught by
    `tests/nvim/spec/leader_spec.lua`.
-2. **No `NODE_TLS_REJECT_UNAUTHORIZED`.** Anywhere outside the `claude/`
-   subtree. The old config disabled TLS verification globally for node-based
-   plugins — that's a security regression, not a workaround.
+2. **No `NODE_TLS_REJECT_UNAUTHORIZED`.** Anywhere in the repo. The old config
+   disabled TLS verification globally for node-based plugins — that's a
+   security regression, not a workaround.
 3. **No `vim.loop`.** Use `vim.uv`. (Caught by invariants_test.)
 4. **No `client.supports_method(...)` dot-call.** Use the colon form
    `client:supports_method(...)` — the dot form is deprecated in nvim 0.11.
