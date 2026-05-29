@@ -36,6 +36,21 @@ assert_contains "$bash_out" "My Project"
 assert_contains "$bash_out" "Opus Test"
 assert_contains "$bash_out" "123/1000 (12%)"
 
+status_command=$(jq -r '.statusLine.command' "$ROOT/claude/settings.json")
+expected_status_command="bash \"\$HOME/.claude/statusline-command.sh\""
+if [ "$status_command" != "$expected_status_command" ]; then
+  echo "unexpected statusLine.command: $status_command" >&2
+  exit 1
+fi
+tmp_home=$(mktemp -d)
+trap 'rm -rf "$tmp_home"' EXIT
+mkdir -p "$tmp_home/.claude"
+ln -s "$ROOT/claude/statusline-command.sh" "$tmp_home/.claude/statusline-command.sh"
+configured_out=$(printf '%s' "$sample" | HOME="$tmp_home" bash -lc "$status_command")
+assert_contains "$configured_out" "My Project"
+assert_contains "$configured_out" "Opus Test"
+assert_contains "$configured_out" "123/1000 (12%)"
+
 if command -v pwsh >/dev/null 2>&1; then
   ps_out=$(printf '%s' "$sample" | pwsh -NoProfile -File "$ROOT/claude/statusline-command.ps1")
   assert_contains "$ps_out" "My Project"

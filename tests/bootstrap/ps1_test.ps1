@@ -99,6 +99,14 @@ Describe "bootstrap.ps1" {
         ($out | Out-String) | Should -Match 'psmux will fail to spawn panes without pwsh'
     }
 
+    It "warns when bash is missing for the Claude statusline" {
+        Mock -CommandName Get-Command -MockWith { $null } -ParameterFilter { $Name -eq 'bash' }
+
+        $out = & $script:Bootstrap 6>&1
+
+        ($out | Out-String) | Should -Match 'Claude statusline requires bash on PATH'
+    }
+
     It "-DryRun changes nothing" {
         & $script:Bootstrap -DryRun | Out-Null
         Test-Path (Join-Path $env:LOCALAPPDATA 'nvim') | Should -Be $false

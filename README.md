@@ -9,7 +9,7 @@
 | **tmux**         | `~/.tmux.conf` → `tmux/tmux.conf`                 | same                            | `%USERPROFILE%\.tmux.conf` → `tmux\tmux.conf` (read by **psmux** — native Windows tmux); also via WSL |
 | **Ghostty**      | `~/Library/Application Support/com.mitchellh.ghostty/config` → `ghostty/config` | `~/.config/ghostty/config` → `ghostty/config` | n/a (Ghostty not on Windows yet) |
 | **Windows Terminal** | n/a                                           | n/a                             | merge `windows-terminal/settings.fragment.jsonc` (see that dir's README)  |
-| **Claude Code**  | `~/.claude/settings.json` → `claude/settings.json`, statusline scripts → `claude/statusline-command.*` | same | `%USERPROFILE%\.claude\settings.json` → `claude\settings.json`, statusline scripts → `claude\statusline-command.*` |
+| **Claude Code**  | `~/.claude/settings.json` → `claude/settings.json`, statusline scripts → `claude/statusline-command.*` | same | `%USERPROFILE%\.claude\settings.json` → `claude\settings.json`, statusline scripts → `claude\statusline-command.*`; statusline requires Git Bash or WSL `bash` on `PATH` |
 
 ## Install
 
@@ -56,6 +56,10 @@ curl -fsSL https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.sh 
 iwr https://raw.githubusercontent.com/luisgui1757/dotfiles/main/setup.ps1 -OutFile setup.ps1
 .\setup.ps1 -All
 ```
+
+For Claude Code on native Windows, install Git Bash or WSL so `bash` is on
+`PATH`. The synced statusline command intentionally stays one shared Bash
+invocation instead of rewriting `settings.json` per OS.
 
 If Developer Mode is unavailable AND you cannot enable it, run JUST
 `bootstrap.ps1` from an elevated PowerShell; do NOT elevate `setup.ps1` --

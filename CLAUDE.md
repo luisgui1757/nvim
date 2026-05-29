@@ -25,6 +25,12 @@ pre-restructure layout routed `~/.claude/settings.json` through
 `~/.config/nvim/claude/` — that indirection is deprecated; bootstrap now links
 `claude/` directly.)
 
+Claude Code statusline uses a single portable Bash invocation in
+`claude/settings.json`: `bash "$HOME/.claude/statusline-command.sh"`. On native
+Windows, Claude Code therefore needs Git Bash or WSL to put `bash` on `PATH`;
+`bootstrap.ps1` warns when that requirement is missing. Do not rewrite
+`settings.json` per OS, because it is symlinked as one shared source of truth.
+
 Claude Code permissions are intentionally portable. `claude/settings.json`
 keeps generic command patterns and a short WebFetch domain list only; do not
 sync project-specific allowlist entries or set `skipDangerousModePermissionPrompt`

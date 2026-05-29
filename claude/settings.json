@@ -100,7 +100,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "command -v pwsh >/dev/null && pwsh -NoProfile -File \"$HOME/.claude/statusline-command.ps1\" || bash \"$HOME/.claude/statusline-command.sh\""
+    "command": "bash \"$HOME/.claude/statusline-command.sh\""
   },
   "enabledPlugins": {
     "impeccable@impeccable": true,

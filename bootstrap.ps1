@@ -213,7 +213,10 @@ New-SymLink -Source (Join-Path $RepoRoot 'shells\powershell_profile.ps1') -Desti
 
 # Claude Code settings (repo root claude/, not under nvim/). New-SymLink
 # creates %USERPROFILE%\.claude\ if absent and backs up any prior file/link.
-# The statusline command prefers pwsh when available and falls back to bash.
+# The statusline command uses bash so settings.json stays portable.
+if (-not (Get-Command bash -ErrorAction SilentlyContinue)) {
+    Write-Host "  WARN     Claude statusline requires bash on PATH; install Git Bash or WSL for Claude Code statusline" -ForegroundColor Yellow
+}
 $claudeDir = Join-Path $env:USERPROFILE '.claude'
 New-SymLink -Source (Join-Path $RepoRoot 'claude\settings.json')         -Destination (Join-Path $claudeDir 'settings.json')
 New-SymLink -Source (Join-Path $RepoRoot 'claude\statusline-command.sh') -Destination (Join-Path $claudeDir 'statusline-command.sh')
