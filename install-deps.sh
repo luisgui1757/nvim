@@ -62,6 +62,39 @@ binaries_for() {
 }
 is_wsl() { grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; }
 
+require_downloader() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        return 0
+    fi
+    if have curl; then
+        return 0
+    fi
+
+    if [[ -z "${PM:-}" ]]; then
+        PM="$(detect_pm)"
+    fi
+    case "$PM" in
+        brew|apt|dnf|pacman|zypper|apk) ;;
+        *)
+            echo "  FAIL: need curl for direct downloads, but no supported package manager was detected" >&2
+            return 1
+            ;;
+    esac
+
+    echo "  need      curl missing; installing curl + CA certificates"
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        pm_install curl ca-certificates
+        return 0
+    fi
+    if ! pm_install curl ca-certificates; then
+        return 1
+    fi
+    if ! have curl; then
+        echo "  FAIL: curl still not found after installing curl ca-certificates" >&2
+        return 1
+    fi
+}
+
 # ask MUST be defined before maybe_install_brew uses it.
 ask() {
     local prompt="$1"
@@ -431,6 +464,7 @@ install_nvim_linux() {
         printf "  skipped   %-26s\n" "nvim"
         return
     fi
+    require_downloader || return 1
     if [[ "$DRY_RUN" -eq 1 ]]; then
         echo "  would: curl -fsSL $url -o /tmp/$asset"
         echo "         sudo rm -rf $install_dir"
@@ -627,6 +661,7 @@ install_nerd_font() {
         printf "  skipped   %-26s\n" "Hack Nerd Font"
         return
     fi
+    require_downloader || return 1
     local url
     url="https://github.com/ryanoasis/nerd-fonts/releases/download/${HACK_NERD_FONT_VERSION}/Hack.zip"
     if [[ "$DRY_RUN" -eq 1 ]]; then
