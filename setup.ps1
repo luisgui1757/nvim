@@ -89,13 +89,17 @@ bootstrap.ps1 would symlink to itself. Move the repo elsewhere first
 }
 
 # ---- Forward flags to sub-scripts --------------------------------------------
-$depsArgs = @()
-if ($All)    { $depsArgs += '-All' }
-if ($DryRun) { $depsArgs += '-DryRun' }
+# Hashtable splatting (not array) so switches bind by NAME. Array splatting
+# passes elements as positional args, which switch parameters cannot accept;
+# that path produced a positional-parameter error the moment Phase 1
+# invoked install-deps.ps1 with -All in CI.
+$depsArgs = @{}
+if ($All)    { $depsArgs['All']    = $true }
+if ($DryRun) { $depsArgs['DryRun'] = $true }
 
-$bootstrapArgs = @()
-if ($DryRun)               { $bootstrapArgs += '-DryRun' }
-if ($MergeWindowsTerminal) { $bootstrapArgs += '-MergeWindowsTerminal' }
+$bootstrapArgs = @{}
+if ($DryRun)               { $bootstrapArgs['DryRun']               = $true }
+if ($MergeWindowsTerminal) { $bootstrapArgs['MergeWindowsTerminal'] = $true }
 
 function Phase {
     param([string]$title)
