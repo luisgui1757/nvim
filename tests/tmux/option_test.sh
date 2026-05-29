@@ -36,7 +36,11 @@ check focus-events on
 check mouse on
 check escape-time 10
 check history-limit 50000
-check window-status-style "fg=#c4a7e7"
+# Inactive window-status-style is intentionally unset (`setw -gu`); tmux
+# reports the unset value as "default", and inactive cells fall back to
+# status-style (pine on base) at render time. The only explicit override is
+# the current-window cell, which is gold-bold.
+check window-status-style "default"
 check window-status-current-style "fg=#f6c177,bold"
 
 # Prefix isn't shown by show-options; verify via list-keys instead.

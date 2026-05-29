@@ -424,7 +424,8 @@ skipped.
 - **tmux colors track the canonical rose-pine/tmux theme.** Source:
   <https://github.com/rose-pine/tmux>, main variant. Role-based styles
   carry the colors. Map: status-style `fg=pine,bg=base`; window-status
-  `fg=iris`; window-status-current `fg=gold,bold`;
+  **UNSET** (inactive cells inherit from status-style);
+  window-status-current `fg=gold,bold`;
   window-status-activity `fg=base,bg=rose`; pane-border `fg=hl_high #524f67`
   / pane-active-border `fg=gold`; message `fg=muted,bg=base`;
   message-command `fg=base,bg=gold`. **DO** set explicit
@@ -436,9 +437,10 @@ skipped.
   in both real tmux and psmux. Active windows use gold with bold weight because
   the foreground-only canonical theme was too subtle in dark terminals; bold is
   the smallest divergence that fixes legibility without breaking the palette.
-  Window-status backgrounds inherit from `status-style` (currently base
-  `#191724`), so the visual stays unchanged today while the style remains ready
-  for future transparent-status tweaks.
+  Inactive cells deliberately use `setw -gu window-status-style` (unset) so
+  they fall through to `status-style` (pine on base) -- one source of
+  truth, no duplicate fg/bg, and any future status-style tweak (e.g.
+  transparency) ripples through cleanly.
   Status-left (iris-bold session + muted
   separator) and status-right (foam date + gold time) are our own
   customizations, palette-consistent. History/rejected attempts worth not
@@ -448,7 +450,9 @@ skipped.
   (3) inactive `text #e0def4` -- bright but flat, user wanted canonical;
   (4) iris inactive + gold-bold ON `bg=overlay #26233a` active block
   (commit 9cf13f8) -- added a bold + bg-block on top of canonical, user
-  preferred plain canonical so the embellishment was reverted.
+  preferred plain canonical so the embellishment was reverted;
+  (5) explicit inactive `fg=iris` (commit ee0d6c9) -- user wanted active
+  to be the only styled cell, inactive should fall back to status-style.
   **Do NOT** switch inactive to `dim` -- it is terminal/ConPTY-flaky under
   psmux and re-creates the legibility problem.
 - **`stylua.toml` at repo root is load-bearing.** stylua reads ONLY its own
