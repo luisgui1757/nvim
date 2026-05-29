@@ -42,6 +42,10 @@ check history-limit 50000
 # the current-window cell, which is gold-bold.
 check window-status-style "default"
 check window-status-current-style "fg=#f6c177,bold"
+# psmux v3.3.4 stores window-status-current-style but does NOT apply it when
+# rendering window cells -- only inline `#[fg=...]` in the format survives.
+# Real tmux applies either; the inline form works on both, so we pin it.
+check window-status-current-format "#[fg=#f6c177,bold] #I:#W#F #[default]"
 
 # Prefix isn't shown by show-options; verify via list-keys instead.
 if ! tmux -L "$sock_name" list-keys -T prefix >/dev/null 2>&1; then

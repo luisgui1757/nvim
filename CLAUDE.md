@@ -452,9 +452,14 @@ skipped.
   (commit 9cf13f8) -- added a bold + bg-block on top of canonical, user
   preferred plain canonical so the embellishment was reverted;
   (5) explicit inactive `fg=iris` (commit ee0d6c9) -- user wanted active
-  to be the only styled cell, inactive should fall back to status-style.
-  **Do NOT** switch inactive to `dim` -- it is terminal/ConPTY-flaky under
-  psmux and re-creates the legibility problem.
+  to be the only styled cell, inactive should fall back to status-style;
+  (6) relying on `window-status-current-style` alone (commits ee0d6c9 /
+  d642a31) -- psmux v3.3.4 stores the option but does NOT apply it when
+  rendering window cells. Only `#[fg=...]` INLINED in
+  `window-status-current-format` actually paints the current window
+  under psmux. Real tmux honors either; we ship the inline form so both
+  render. **Do NOT** switch inactive to `dim` -- it is terminal/ConPTY-flaky
+  under psmux and re-creates the legibility problem.
 - **`stylua.toml` at repo root is load-bearing.** stylua reads ONLY its own
   config (`stylua.toml` / `.stylua.toml`) -- it does NOT respect
   `.editorconfig`. Its built-in defaults are `indent_type = "Tabs"` and
