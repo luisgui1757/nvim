@@ -5,22 +5,25 @@
 # Windows path was %APPDATA% in earlier commits; lazygit v0.58 actually
 # reads from %LOCALAPPDATA% (verified via `lazygit --print-config-dir`).
 #
-# psmux v3.3.4 does not relay Windows Terminal's Win32-input-mode
-# disambiguation to panes, so Ctrl+J arrives at lazygit as Enter. The
-# Windows-only psmux overlay (`tmux/tmux.windows.conf`) catches C-j / C-k at
-# psmux's root parser and sends F8 / F7 to the pane instead. Those F-keys are
-# registered lazygit key names, so bind moveDownCommit / moveUpCommit to them
-# here.
+# Move commits with uppercase J / K, not Ctrl+J / Ctrl+K. In lazygit v0.58.1,
+# MoveDownCommit / MoveUpCommit are typed as Go string fields, so this override
+# REPLACES the default <c-j> / <c-k> instead of adding alternatives. Ctrl+J is
+# byte 0x0A (LF), the same byte as Enter; disambiguating it requires
+# Win32-input-mode / modifyOtherKeys / kitty keyboard protocol metadata, and
+# psmux v3.3.4 does not relay Windows Terminal's Win32-input-mode metadata to
+# panes. J / K are normal printable bytes that survive ConPTY, psmux, real
+# tmux, and bare terminals.
 #
-# Trade-off: lazygit v0.58 stores these as single string fields, so this
-# override replaces the default Ctrl+J / Ctrl+K bindings instead of adding
-# alternatives. F8 / F7 are the canonical move-commit keys everywhere this
-# config is loaded. Inside Windows psmux, Ctrl+J / Ctrl+K still work by being
-# translated to F8 / F7 before lazygit sees them.
+# Coexistence: J / K default to universal.scrollDownMain-alt1 /
+# scrollUpMain-alt1. lazygit registers commits-context bindings ahead of
+# universal bindings, so when the commits panel is focused J / K move commits;
+# in other panels J / K still scroll the main/diff window. Trade-off: while
+# focused on the commits panel, Shift-J / Shift-K no longer scroll the
+# main/diff window. Use PgUp / PgDn or Ctrl-U / Ctrl-D there instead.
 #
-# Unix tmux is not given the psmux root binds because bootstrap.sh does not
-# symlink tmux.windows.conf; only bootstrap.ps1 does.
+# psmux needs no special config for this binding because J / K travel through
+# cleanly.
 keybinding:
   commits:
-    moveDownCommit: '<f8>'
-    moveUpCommit: '<f7>'
+    moveDownCommit: 'J'
+    moveUpCommit: 'K'

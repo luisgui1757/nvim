@@ -47,8 +47,7 @@ Describe "bootstrap.ps1" {
         $tmuxWin.Target  | Should -Match 'tmux\\tmux\.windows\.conf$'
         # lazygit config -- symlinked into %LOCALAPPDATA%\lazygit (where
         # lazygit v0.58 actually reads from, NOT %APPDATA%). Binds
-        # move-commit to F8/F7; tmux.windows.conf translates psmux
-        # C-j/C-k to those F-keys.
+        # move-commit to uppercase J/K.
         $lazy = Get-Item (Join-Path $env:LOCALAPPDATA 'lazygit/config.yml')
         $lazy.LinkType | Should -Be 'SymbolicLink'
         $lazy.Target  | Should -Match 'lazygit\\config\.yml$'

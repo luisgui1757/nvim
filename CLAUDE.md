@@ -31,7 +31,7 @@ machine; this repo does not ship a `claude/` folder.
 ├── tmux/                  tmux.conf (Rose Pine, vi-mode, OSC52 clipboard)
 ├── ghostty/               config (Rose Pine, Hack Nerd, tuned for tmux)
 ├── windows-terminal/      settings.fragment.jsonc + merge README
-├── lazygit/               config.yml (F8/F7 move-commit binding for psmux rescue)
+├── lazygit/               config.yml (J/K move-commit binding)
 ├── tests/                 automated tests, grouped by tool
 ├── .github/workflows/     CI matrix: ubuntu / macos / windows
 ├── bootstrap.sh           macOS/Linux/WSL installer (idempotent)
@@ -455,41 +455,35 @@ skipped.
   `space`. Both pieces are required: editorconfig controls nvim's buffer
   behavior while editing; stylua.toml controls what gets written back.
   Guarded by `invariants_test.sh` ("no tab-indented .lua").
-- **lazygit Ctrl+J / Ctrl+K are rescued under psmux via F8/F7 root binds,
-  AND the config must symlink into `%LOCALAPPDATA%\lazygit\`.** Two
-  separate gotchas wrapped together:
+- **lazygit move-commit uses uppercase J / K, and the config must symlink into
+  `%LOCALAPPDATA%\lazygit\`.** Two separate gotchas wrapped together:
   1. **Config path:** lazygit v0.58 reads its config from
      `%LOCALAPPDATA%\lazygit\config.yml` (verified via `lazygit
      --print-config-dir`), NOT `%APPDATA%\lazygit\config.yml`. An earlier
      bootstrap.ps1 symlinked into `%APPDATA%` -- the file existed but
-     lazygit never loaded it, so EVERY custom binding (including F-key
-     fallbacks) looked dead. Bootstrap now targets LocalAppData. Asserted
-     by `tests/bootstrap/ps1_test.ps1`.
-  2. **Binding:** Ctrl+J is ASCII LF (0x0A) -- the same byte as Enter.
-     Disambiguating requires Win32-input-mode (ConPTY DECSET 9001),
-     modifyOtherKeys, or kitty keyboard protocol. Windows Terminal sends
-     it; lazygit's tcell/v3 decodes it; but psmux v3.3.4 does NOT relay
-     the escape, so default Ctrl+J degrades to Enter inside a psmux pane.
-     No documented psmux config option relays that metadata to panes, so
-     we shift the disambiguation up one layer: `tmux/tmux.windows.conf`
-     root-binds `C-j` / `C-k` to `send-keys F8` / `send-keys F7`, and
-     `lazygit/config.yml` binds `moveDownCommit` / `moveUpCommit` to
-     `<f8>` / `<f7>`. lazygit v0.58 stores these keybindings as single
-     string fields, so the override REPLACES the default Ctrl+J / Ctrl+K
-     bindings rather than adding alternatives. F8 / F7 are therefore the
-     canonical move-commit keys anywhere this config is loaded. Inside
-     Windows psmux panes, muscle-memory Ctrl+J / Ctrl+K still works because
-     psmux translates it before lazygit sees it. Outside psmux, use F8 /
-     F7 for this action.
-     Scope stays Windows-only: `bootstrap.ps1` symlinks
-     `tmux/tmux.windows.conf` to `~/.tmux.windows.conf`; `bootstrap.sh`
-     does NOT. The main `tmux/tmux.conf` only `source-file -q`s that path,
-     so normal Unix tmux is unaffected unless a user manually creates a
-     stray `~/.tmux.windows.conf` symlink. Real tmux on Unix still has
-     `extended-keys on` + `extended-keys-format csi-u` +
-     `terminal-features *:extkeys` in the main config, but lazygit's
-     explicit F-key override means those settings no longer preserve the
-     default Ctrl+J / Ctrl+K lazygit action.
+     lazygit never loaded it, so EVERY custom binding looked dead.
+     Bootstrap now targets LocalAppData. Asserted by
+     `tests/bootstrap/ps1_test.ps1`.
+  2. **Binding:** `lazygit/config.yml` binds
+     `keybinding.commits.moveDownCommit` / `moveUpCommit` to uppercase
+     `J` / `K`. We intentionally do NOT use Ctrl+J / Ctrl+K: Ctrl+J is
+     ASCII LF (0x0A), the same byte as Enter. Disambiguating requires
+     Win32-input-mode (ConPTY DECSET 9001), modifyOtherKeys, or kitty
+     keyboard protocol metadata. Windows Terminal sends it and lazygit's
+     tcell/v3 can decode it, but psmux v3.3.4 does NOT relay the metadata
+     to panes, so default Ctrl+J degrades to Enter inside psmux. Uppercase
+     J / K are normal printable bytes and skip that entire transport
+     problem.
+     This is safe because lazygit v0.58.1 dispatches commits-context
+     bindings before universal bindings, then falls through on
+     ErrKeybindingNotHandled (`pkg/gui/keybindings.go:420-441` and
+     `pkg/gui/keybindings.go:476-547`). So in the commits panel J / K fire
+     moveDownCommit / moveUpCommit; elsewhere they still reach
+     `universal.scrollDownMain-alt1` / `scrollUpMain-alt1`. Trade-off:
+     while focused on the commits panel, Shift-J / Shift-K no longer scroll
+     the main/diff window -- use PgUp / PgDn or Ctrl-U / Ctrl-D there.
+     psmux no longer needs a root bind for this; `tmux/tmux.windows.conf`
+     is back to its Windows shell / prediction / mouse overlay purpose.
 
 ## When you're about to make a change
 

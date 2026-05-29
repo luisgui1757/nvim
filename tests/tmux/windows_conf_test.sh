@@ -13,10 +13,29 @@ require_line() {
     fi
 }
 
-require_line '^bind-key[[:space:]]+-n[[:space:]]+C-j[[:space:]]+send-keys[[:space:]]+F8$' \
-    'tmux.windows.conf must translate C-j to F8 for lazygit inside psmux'
-require_line '^bind-key[[:space:]]+-n[[:space:]]+C-k[[:space:]]+send-keys[[:space:]]+F7$' \
-    'tmux.windows.conf must translate C-k to F7 for lazygit inside psmux'
+reject_line() {
+    local pattern=$1 message=$2
+    if grep -Eq "$pattern" "$WIN_CONF"; then
+        echo "FAIL: $message"
+        exit 1
+    fi
+}
+
+reject_line '^bind-key[[:space:]]+-n[[:space:]]+C-j[[:space:]]+send-keys[[:space:]]+F8$' \
+    'tmux.windows.conf must not translate C-j for lazygit'
+reject_line '^bind-key[[:space:]]+-n[[:space:]]+C-k[[:space:]]+send-keys[[:space:]]+F7$' \
+    'tmux.windows.conf must not translate C-k for lazygit'
+
+require_line '^set[[:space:]]+-g[[:space:]]+default-shell[[:space:]]+pwsh$' \
+    'tmux.windows.conf must set psmux default-shell to pwsh'
+require_line '^set[[:space:]]+-g[[:space:]]+allow-predictions[[:space:]]+on$' \
+    'tmux.windows.conf must keep psmux predictions enabled'
+require_line '^set[[:space:]]+-g[[:space:]]+mouse-selection[[:space:]]+off$' \
+    'tmux.windows.conf must leave psmux mouse-selection off'
+require_line '^set[[:space:]]+-g[[:space:]]+pwsh-mouse-selection[[:space:]]+off$' \
+    'tmux.windows.conf must leave psmux pwsh mouse-selection off'
+require_line '^set[[:space:]]+-g[[:space:]]+scroll-enter-copy-mode[[:space:]]+on$' \
+    'tmux.windows.conf must keep wheel-scroll copy-mode'
 
 if ! grep -Eq "tmux\\\\tmux\.windows\.conf" "$REPO_ROOT/bootstrap.ps1"; then
     echo "FAIL: bootstrap.ps1 must symlink tmux.windows.conf on Windows"

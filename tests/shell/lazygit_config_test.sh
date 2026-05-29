@@ -6,7 +6,8 @@
 #   2) keybinding values like <alt+j> or <a-j> which are NOT in
 #      pkg/config/keynames.go LabelByKey; lazygit rejects them at startup
 #      with "Unrecognized key".
-#   3) losing the psmux rescue binding: Option 1 requires <f8>/<f7>.
+#   3) losing the printable move-commit binding: moveDownCommit must be J and
+#      moveUpCommit must be K.
 #
 # We strip YAML comments (everything from # to end of line) before grepping
 # so the warnings in the config header do not trip the test.
@@ -84,7 +85,7 @@ if [[ -n "$hits" ]]; then
 fi
 
 # 3) Refuse Alt+letter (only <a-enter> is registered).
-hits=$(match '<a-[a-z]>' | grep -v '<a-enter>' || true)
+hits=$(match '<[aA]-[[:alpha:]]>' | grep -vi '<a-enter>' || true)
 if [[ -n "$hits" ]]; then
     echo "FAIL: <a-LETTER> in config; lazygit v0.58 only registers <a-enter>"
     echo "$hits"
@@ -97,14 +98,13 @@ move_up=$(value_for moveUpCommit)
 assert_lazygit_key_shape moveDownCommit "$move_down"
 assert_lazygit_key_shape moveUpCommit "$move_up"
 
-# 5) Option 1 pin: psmux translates Ctrl+J/K to F8/F7, so lazygit must bind
-# those exact keys.
-if [[ "$move_down" != '<f8>' ]]; then
-    echo "FAIL: moveDownCommit = '$move_down' (want '<f8>')"
+# 5) Positive value check: the move-commit bindings must stay printable J/K.
+if [[ "$move_down" != 'J' ]]; then
+    echo "FAIL: moveDownCommit = '$move_down' (want 'J')"
     fail=1
 fi
-if [[ "$move_up" != '<f7>' ]]; then
-    echo "FAIL: moveUpCommit = '$move_up' (want '<f7>')"
+if [[ "$move_up" != 'K' ]]; then
+    echo "FAIL: moveUpCommit = '$move_up' (want 'K')"
     fail=1
 fi
 
