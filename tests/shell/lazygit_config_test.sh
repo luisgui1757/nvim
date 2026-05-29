@@ -1,31 +1,49 @@
 #!/usr/bin/env bash
-# Regression guard: lazygit/config.yml must use single-string bindings, not
-# arrays. lazygit v0.58.x types moveDownCommit/moveUpCommit as Go `string`;
-# an array (!!seq) here aborts lazygit with "cannot unmarshal !!seq into
-# string" at every startup.
+# Regression guard: lazygit/config.yml must be parseable by lazygit v0.58.x.
+# Two specific failure shapes we have hit and want pinned:
+#   1) array-form values for fields lazygit types as Go string ("cannot
+#      unmarshal !!seq into string").
+#   2) keybinding values like <alt+j> or <a-j> which are NOT in
+#      pkg/config/keynames.go LabelByKey; lazygit rejects them at startup
+#      with "Unrecognized key".
+#
+# We strip YAML comments (everything from # to end of line) before grepping
+# so the warnings in the config header do not trip the test.
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 CFG="$REPO_ROOT/lazygit/config.yml"
 
+# Comment-stripped content (preserves line numbers for grep -n output).
+stripped=$(sed -E 's/[[:space:]]*#.*$//' "$CFG")
+
 fail=0
-for key in moveDownCommit moveUpCommit; do
-    line=$(grep -E "^\s*${key}:" "$CFG" || true)
-    if [[ -z "$line" ]]; then continue; fi
-    # An array-form value contains a `[` somewhere in the value position.
-    if [[ "$line" == *"["* ]]; then
-        echo "FAIL: $key uses array form; lazygit rejects with 'cannot unmarshal !!seq into string'"
-        echo "      $line"
-        fail=1
-    fi
-    # lazygit v0.58 uses the short modifier form with DASH separator
-    # (<a-LETTER>, <c-LETTER>). The long form with plus (<alt+LETTER>,
-    # <ctrl+LETTER>) is master-only and v0.58 rejects it as
-    # "Unrecognized key". Refuse the long form.
-    if grep -Eq "<(alt|ctrl|shift|meta)\+" <<<"$line"; then
-        echo "FAIL: $key uses <modifier+key> long form; lazygit v0.58 needs <a-key>/<c-key> short form"
-        echo "      $line"
-        fail=1
-    fi
-done
+match() {
+    local pattern=$1
+    printf '%s\n' "$stripped" | grep -nE "$pattern" | grep -v '^[0-9]*:[[:space:]]*$' || true
+}
+
+# 1) No array form on string-typed fields.
+hits=$(match '^[[:space:]]+(moveDownCommit|moveUpCommit|.*Commit):[[:space:]]*\[')
+if [[ -n "$hits" ]]; then
+    echo "FAIL: array form found on a lazygit string field"
+    echo "$hits"
+    fail=1
+fi
+
+# 2) Refuse the long modifier forms.
+hits=$(match '<(alt|ctrl|shift|meta)\+')
+if [[ -n "$hits" ]]; then
+    echo "FAIL: <modifier+key> long form is rejected by lazygit v0.58"
+    echo "$hits"
+    fail=1
+fi
+
+# 3) Refuse Alt+letter (only <a-enter> is registered).
+hits=$(match '<a-[a-z]>' | grep -v '<a-enter>' || true)
+if [[ -n "$hits" ]]; then
+    echo "FAIL: <a-LETTER> in config; lazygit v0.58 only registers <a-enter>"
+    echo "$hits"
+    fail=1
+fi
 
 [[ "$fail" -eq 0 ]] && echo "OK" || exit 1
