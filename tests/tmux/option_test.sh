@@ -36,13 +36,8 @@ check focus-events on
 check mouse on
 check escape-time 10
 check history-limit 50000
-
-current_window_style="$(show window-status-current-style)"
-if [[ "$current_window_style" != *bold* ]]; then
-    echo "FAIL: window-status-current-style = '$current_window_style' (want bold)"
-    exit 1
-fi
-echo "  window-status-current-style = $current_window_style"
+check window-status-style "fg=#c4a7e7"
+check window-status-current-style "fg=#f6c177,bold"
 
 # Prefix isn't shown by show-options; verify via list-keys instead.
 if ! tmux -L "$sock_name" list-keys -T prefix >/dev/null 2>&1; then
