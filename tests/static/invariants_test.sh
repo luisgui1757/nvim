@@ -94,8 +94,16 @@ ps1_files=()
 while IFS= read -r f; do ps1_files+=("$f"); done < <(
     find . -type f -name '*.ps1' -not -path './.git/*' -not -path './tests/.cache/*'
 )
-ps1_non_ascii=$(LC_ALL=C grep -lP "[^\x00-\x7F]" "${ps1_files[@]}" 2>/dev/null || true)
-if [[ -n "$ps1_non_ascii" ]]; then
+find_non_ascii_ps1() {
+    [[ "$#" -gt 0 ]] || return 0
+    LC_ALL=C awk '/[\200-\377]/{print FILENAME; nextfile}' "$@" 2>/dev/null
+}
+
+ps1_non_ascii=""
+if ! ps1_non_ascii="$(find_non_ascii_ps1 "${ps1_files[@]}")"; then
+    echo "FAIL: .ps1 ASCII scan errored"
+    fail=1
+elif [[ -n "$ps1_non_ascii" ]]; then
     echo "FAIL: non-ASCII chars in .ps1 file(s) (PS 5.1 will mis-parse):"
     # shellcheck disable=SC2001  # sed is clearer than ${//} for line-prefixing
     echo "$ps1_non_ascii" | sed 's/^/  /'
@@ -103,6 +111,24 @@ if [[ -n "$ps1_non_ascii" ]]; then
 else
     echo "ok  : all .ps1 files are pure ASCII (PS 5.1 safe)"
 fi
+
+ps1_ascii_regression_dir="$REPO_ROOT/tests/.cache/ps1-ascii-invariant"
+rm -rf "$ps1_ascii_regression_dir"
+mkdir -p "$ps1_ascii_regression_dir"
+trap 'rm -rf "$ps1_ascii_regression_dir"' EXIT
+ps1_ascii_regression_file="$ps1_ascii_regression_dir/high-bit.ps1"
+printf 'Write-Host ok\n# high byte: \303\251\n' > "$ps1_ascii_regression_file"
+ps1_ascii_regression_hit=""
+if ! ps1_ascii_regression_hit="$(find_non_ascii_ps1 "$ps1_ascii_regression_file")"; then
+    echo "FAIL: .ps1 ASCII regression scan errored"
+    fail=1
+elif [[ "$ps1_ascii_regression_hit" != "$ps1_ascii_regression_file" ]]; then
+    echo "FAIL: .ps1 ASCII check missed a high-bit byte in tests/.cache"
+    fail=1
+else
+    echo "ok  : .ps1 ASCII check catches high-bit bytes"
+fi
+rm -rf "$ps1_ascii_regression_dir"
 
 # PS 5.1 has been observed mis-parsing comments that contain a lone
 # apostrophe (e.g. "5.1's") — it sometimes treats the apostrophe as
