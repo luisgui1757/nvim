@@ -45,11 +45,32 @@ describe("startup time", function()
     return total_ms
   end
 
-  local function lazy_prewarm_path(shared_data, localappdata, sysname)
-    if sysname:match("Windows") then
-      return localappdata .. "/nvim-data/lazy/lazy.nvim"
-    end
-    return shared_data .. "/nvim/lazy/lazy.nvim"
+  local function child_stdpath_data(env)
+    local result = vim.system({
+      vim.v.progpath,
+      "--headless",
+      "--clean",
+      "--cmd",
+      "lua io.stdout:write(vim.fn.stdpath('data'))",
+      "+qa",
+    }, {
+      env = env,
+      text = true,
+    }):wait()
+
+    assert.are.equal(
+      0,
+      result.code,
+      table.concat({
+        "nvim stdpath probe exited non-zero",
+        "stdout: " .. tostring(result.stdout),
+        "stderr: " .. tostring(result.stderr),
+      }, "\n")
+    )
+
+    local data_path = (result.stdout or ""):match("^[^\r\n]+")
+    assert.is_not_nil(data_path, "could not read stdpath('data') from child nvim")
+    return data_path:gsub("\\", "/")
   end
 
   local function mtime_id(path)
@@ -94,12 +115,7 @@ describe("startup time", function()
       USERPROFILE = run_root .. "/userprofile",
     }
 
-    assert.are.equal(
-      localappdata .. "/nvim-data/lazy/lazy.nvim",
-      lazy_prewarm_path(shared_data, localappdata, "Windows_NT")
-    )
-
-    local lazy_path = lazy_prewarm_path(shared_data, localappdata, sysname)
+    local lazy_path = child_stdpath_data(env) .. "/lazy/lazy.nvim"
     if vim.fn.isdirectory(lazy_path) == 0 then
       run_real_init(env, run_root .. "/prewarm.log")
     end
